@@ -1,4 +1,7 @@
+
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("ConnStr");
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
