@@ -80,6 +80,7 @@ public partial class PulseDbContext : DbContext
             entity.Property(e => e.HttpMethodId).HasColumnName("http_method_id");
             entity.Property(e => e.Method)
                 .HasColumnType("character varying")
+                .HasMaxLength(10)
                 .HasColumnName("http_method");
         });
 
@@ -94,6 +95,7 @@ public partial class PulseDbContext : DbContext
             entity.Property(e => e.IntervalSeconds).HasColumnName("interval_seconds");
             entity.Property(e => e.Path)
                 .HasColumnType("character varying")
+                .HasMaxLength(50)
                 .HasColumnName("path");
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
 
@@ -117,6 +119,7 @@ public partial class PulseDbContext : DbContext
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
             entity.Property(e => e.BaseUrl)
                 .HasColumnType("character varying")
+                .HasMaxLength(50)
                 .HasColumnName("base_url");
             entity.Property(e => e.ServiceStatusId).HasColumnName("service_status_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
@@ -143,6 +146,7 @@ public partial class PulseDbContext : DbContext
             entity.Property(e => e.ServiceStatusId).HasColumnName("service_status_id");
             entity.Property(e => e.Status)
                 .HasColumnType("character varying")
+                .HasMaxLength(10)
                 .HasColumnName("service_status");
         });
 
