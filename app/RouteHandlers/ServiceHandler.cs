@@ -16,7 +16,12 @@ public static class ServiceHandler
 
         app.MapGet("/services/{id}", async (int id, PulseDbContext dbContext, CancellationToken cancellationToken) =>
         {
-            var service = await dbContext.Services.FindAsync(id, cancellationToken);
+            Service? service = await dbContext.Services.FindAsync(id, cancellationToken);
+            if (service == null)
+            {
+                return Results.NotFound();
+            }
+            
             return Results.Ok(service);
         });
 
