@@ -26,9 +26,6 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
     public virtual DbSet<Service> Services { get; set; }
 
     public virtual DbSet<ServiceStatus> ServiceStatuses { get; set; }
-    
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:ConnStr");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
