@@ -121,6 +121,9 @@ public partial class PulseDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasMaxLength(50)
                 .HasColumnName("base_url");
+            entity.Property(e => e.Name).HasColumnName("name")
+                .HasColumnType("character varying")
+                .HasMaxLength(30);
             entity.Property(e => e.ServiceStatusId).HasColumnName("service_status_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 

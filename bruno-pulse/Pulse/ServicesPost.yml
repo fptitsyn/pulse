@@ -1,0 +1,29 @@
+info:
+  name: ServicesPost
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: localhost:5069/services
+  body:
+    type: json
+    data: |-
+      {
+        "userId": 1,
+        "baseUrl": "postgresql.org",
+        "name": "postgres",
+        "serviceStatusId": 3,
+        "user": {
+          "email": "email@example.com",
+          "passwordHash": "123"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

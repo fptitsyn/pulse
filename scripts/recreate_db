@@ -1,0 +1,5 @@
+#!/bin/bash
+sudo -iu postgres
+psql
+DROP DATABASE pulse_db;
+CREATE DATABASE pulse_db OWNER pulse;
