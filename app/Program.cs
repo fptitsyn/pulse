@@ -6,7 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("ConnStr");
 
-builder.Services.AddDbContext<PulseDbContext>(options =>
+builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
+    .AddEntityFrameworkStores<PulseDbContext>();
+
+builder.Services.AddDbContext<PulseDbContext>(options => 
 {
     options.UseNpgsql(connectionString);
 });

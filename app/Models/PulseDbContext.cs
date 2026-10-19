@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace app.Models;
 
-public partial class PulseDbContext : DbContext
+public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
 {
     public PulseDbContext()
     {
@@ -24,14 +26,14 @@ public partial class PulseDbContext : DbContext
     public virtual DbSet<Service> Services { get; set; }
 
     public virtual DbSet<ServiceStatus> ServiceStatuses { get; set; }
-
-    public virtual DbSet<User> Users { get; set; }
-
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql("Name=ConnectionStrings:ConnStr");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        
         modelBuilder.Entity<CheckResult>(entity =>
         {
             entity.HasKey(e => e.CheckResultId).HasName("check_results_pkey");
@@ -125,7 +127,7 @@ public partial class PulseDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasMaxLength(30);
             entity.Property(e => e.ServiceStatusId).HasColumnName("service_status_id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ApplicationUserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.ServiceStatus).WithMany(p => p.Services)
                 .HasForeignKey(d => d.ServiceStatusId)
@@ -133,7 +135,7 @@ public partial class PulseDbContext : DbContext
                 .HasConstraintName("services_service_status_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Services)
-                .HasForeignKey(d => d.UserId)
+                .HasForeignKey(d => d.ApplicationUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("services_user_id_fkey");
         });
@@ -152,24 +154,5 @@ public partial class PulseDbContext : DbContext
                 .HasMaxLength(10)
                 .HasColumnName("service_status");
         });
-
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.UserId).HasName("users_pkey");
-
-            entity.ToTable("users");
-
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Email)
-                .HasMaxLength(50)
-                .HasColumnName("email");
-            entity.Property(e => e.PasswordHash)
-                .HasColumnType("character varying")
-                .HasColumnName("password_hash");
-        });
-
-        OnModelCreatingPartial(modelBuilder);
     }
-
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

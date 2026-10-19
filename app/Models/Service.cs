@@ -4,7 +4,7 @@ public partial class Service
 {
     public int ServiceId { get; set; }
 
-    public int UserId { get; set; }
+    public int ApplicationUserId { get; set; }
 
     public string BaseUrl { get; set; } = null!;
 
@@ -16,5 +16,5 @@ public partial class Service
 
     public virtual ServiceStatus ServiceStatus { get; set; } = null!;
 
-    public virtual User User { get; set; } = null!;
+    public virtual ApplicationUser User { get; set; } = null!;
 }
