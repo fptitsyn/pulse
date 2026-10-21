@@ -117,7 +117,6 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
             entity.Property(e => e.IntervalSeconds).HasColumnName("interval_seconds");
             entity.Property(e => e.Path)
                 .HasColumnType("character varying")
-                .HasMaxLength(50)
                 .HasColumnName("path");
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
 
@@ -141,7 +140,6 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
             entity.Property(e => e.BaseUrl)
                 .HasColumnType("character varying")
-                .HasMaxLength(50)
                 .HasColumnName("base_url");
             entity.Property(e => e.Name).HasColumnName("name")
                 .HasColumnType("character varying")

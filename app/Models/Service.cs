@@ -18,3 +18,10 @@ public class Service
 
     public virtual ApplicationUser User { get; set; } = null!;
 }
+
+public class ServiceDto
+{
+    public string BaseUrl { get; set; } = null!;
+
+    public string Name { get; set; } = null!;
+}
