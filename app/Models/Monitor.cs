@@ -1,6 +1,6 @@
 ﻿namespace app.Models;
 
-public partial class Monitor
+public class Monitor
 {
     public int MonitorId { get; set; }
 

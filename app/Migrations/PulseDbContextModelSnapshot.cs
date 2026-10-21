@@ -282,6 +282,63 @@ namespace app.Migrations
                         .IsUnique();
 
                     b.ToTable("http_codes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            HttpCodeId = (short)1,
+                            Code = (short)200
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)2,
+                            Code = (short)201
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)3,
+                            Code = (short)204
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)4,
+                            Code = (short)301
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)5,
+                            Code = (short)302
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)6,
+                            Code = (short)304
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)7,
+                            Code = (short)400
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)8,
+                            Code = (short)401
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)9,
+                            Code = (short)403
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)10,
+                            Code = (short)404
+                        },
+                        new
+                        {
+                            HttpCodeId = (short)11,
+                            Code = (short)500
+                        });
                 });
 
             modelBuilder.Entity("app.Models.HttpMethod", b =>
@@ -306,6 +363,38 @@ namespace app.Migrations
                         .IsUnique();
 
                     b.ToTable("http_methods", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            HttpMethodId = (short)1,
+                            Method = "HEAD"
+                        },
+                        new
+                        {
+                            HttpMethodId = (short)2,
+                            Method = "GET"
+                        },
+                        new
+                        {
+                            HttpMethodId = (short)3,
+                            Method = "POST"
+                        },
+                        new
+                        {
+                            HttpMethodId = (short)4,
+                            Method = "PUT"
+                        },
+                        new
+                        {
+                            HttpMethodId = (short)5,
+                            Method = "PATCH"
+                        },
+                        new
+                        {
+                            HttpMethodId = (short)6,
+                            Method = "DELETE"
+                        });
                 });
 
             modelBuilder.Entity("app.Models.Monitor", b =>
@@ -406,6 +495,23 @@ namespace app.Migrations
                         .IsUnique();
 
                     b.ToTable("service_statuses", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            ServiceStatusId = (short)1,
+                            Status = "UNKNOWN"
+                        },
+                        new
+                        {
+                            ServiceStatusId = (short)2,
+                            Status = "UP"
+                        },
+                        new
+                        {
+                            ServiceStatusId = (short)3,
+                            Status = "DOWN"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
