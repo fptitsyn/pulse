@@ -31,6 +31,6 @@ public static class ServiceHandler
                 await dbContext.Services.AddAsync(service, cancellationToken);
                 await dbContext.SaveChangesAsync(cancellationToken);
             return Results.Created();
-        });
+        }).RequireAuthorization();
     }
 }

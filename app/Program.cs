@@ -6,6 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("ConnStr");
 
+builder.Services.AddAuthentication().AddBearerToken();
+builder.Services.AddAuthorization();
+
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<PulseDbContext>();
 
@@ -28,5 +31,9 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.RegisterServiceRoutes();
+app.MapIdentityApi<ApplicationUser>();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Run();
