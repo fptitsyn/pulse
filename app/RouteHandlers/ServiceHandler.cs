@@ -27,10 +27,9 @@ public static class ServiceHandler
                 int? userId = GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
-                Service? service = await dbContext.Services.FindAsync([id], cancellationToken);
+                Service? service = await dbContext.Services
+                    .FirstOrDefaultAsync(s => s.ServiceId == id && s.ApplicationUserId == userId, cancellationToken);
                 if (service == null) return Results.NotFound();
-
-                if (service.ApplicationUserId != userId) return Results.NotFound();
 
                 return Results.Ok(service);
             }).RequireAuthorization();
@@ -64,11 +63,10 @@ public static class ServiceHandler
                 int? userId = GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
-                Service? service = await dbContext.Services.FindAsync([id], cancellationToken);
+                Service? service = await dbContext.Services
+                    .FirstOrDefaultAsync(s => s.ServiceId == id && s.ApplicationUserId == userId, cancellationToken);
                 if (service == null) return Results.NotFound();
 
-                if (service.ApplicationUserId != userId) return Results.NotFound();
-                
                 service.Name = serviceDto.Name;
                 service.BaseUrl = serviceDto.BaseUrl;
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -82,11 +80,10 @@ public static class ServiceHandler
                 int? userId = GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
                 
-                Service? service = await dbContext.Services.FindAsync([id], cancellationToken);
+                Service? service = await dbContext.Services
+                    .FirstOrDefaultAsync(s => s.ServiceId == id && s.ApplicationUserId == userId, cancellationToken);
                 if (service == null) return Results.NotFound();
 
-                if (service.ApplicationUserId != userId) return Results.NotFound();
-                
                 dbContext.Services.Remove(service);
                 await dbContext.SaveChangesAsync(cancellationToken);
 
