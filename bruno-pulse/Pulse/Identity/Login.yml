@@ -15,7 +15,6 @@ http:
     data: |-
       {
         "email": "test@example.com",
-        "name": "testuser",
         "password": {{test_password}}
       }
   auth: inherit

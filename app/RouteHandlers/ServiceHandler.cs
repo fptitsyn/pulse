@@ -9,22 +9,28 @@ public static class ServiceHandler
 {
     public static void RegisterServiceRoutes(this WebApplication app)
     {
-        app.MapGet("/services", async (CancellationToken cancellationToken, PulseDbContext dbContext) =>
+        app.MapGet("/services", async (CancellationToken cancellationToken, PulseDbContext dbContext, ClaimsPrincipal user) =>
         {
-            var services = await dbContext.Services.ToListAsync(cancellationToken);
+            int? userId = GetUserId(user);
+            if (userId == null) return Results.Unauthorized();
+            
+            var services = await dbContext.Services
+                .Where(s => s.ApplicationUserId == userId)
+                .ToListAsync(cancellationToken);
+            
             return Results.Ok(services);
         }).RequireAuthorization();
 
         app.MapGet("/services/{id}",
             async (int id, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                int userId = GetUserId(user);
-                if (userId == -1) return Results.Unauthorized();
+                int? userId = GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
 
                 Service? service = await dbContext.Services.FindAsync([id], cancellationToken);
                 if (service == null) return Results.NotFound();
 
-                if (service.ApplicationUserId != userId) return Results.Forbid();
+                if (service.ApplicationUserId != userId) return Results.NotFound();
 
                 return Results.Ok(service);
             }).RequireAuthorization();
@@ -32,12 +38,12 @@ public static class ServiceHandler
         app.MapPost("/services",
             async ([FromBody] ServiceDto serviceDto, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                int userId = GetUserId(user);
-                if (userId == -1) return Results.Unauthorized();
+                int? userId = GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
 
                 Service service = new Service
                 {
-                    ApplicationUserId = userId,
+                    ApplicationUserId = (int)userId,
                     Name = serviceDto.Name,
                     BaseUrl = serviceDto.BaseUrl,
                     ServiceStatusId = ServiceStatusIds.Unknown
@@ -55,13 +61,13 @@ public static class ServiceHandler
         app.MapPut("/services/{id}",
             async (int id, ServiceDto serviceDto, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken cancellationToken) =>
             {
-                int userId = GetUserId(user);
-                if (userId == -1) return Results.Unauthorized();
+                int? userId = GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
 
                 Service? service = await dbContext.Services.FindAsync([id], cancellationToken);
                 if (service == null) return Results.NotFound();
 
-                if (service.ApplicationUserId != userId) return Results.Forbid();
+                if (service.ApplicationUserId != userId) return Results.NotFound();
                 
                 service.Name = serviceDto.Name;
                 service.BaseUrl = serviceDto.BaseUrl;
@@ -73,13 +79,13 @@ public static class ServiceHandler
         app.MapDelete("/services/{id}",
             async (int id, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                int userId = GetUserId(user);
-                if (userId == -1) return Results.Unauthorized();
+                int? userId = GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
                 
                 Service? service = await dbContext.Services.FindAsync([id], cancellationToken);
                 if (service == null) return Results.NotFound();
 
-                if (service.ApplicationUserId != userId) return Results.Forbid();
+                if (service.ApplicationUserId != userId) return Results.NotFound();
                 
                 dbContext.Services.Remove(service);
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -88,10 +94,10 @@ public static class ServiceHandler
             }).RequireAuthorization();
     }
 
-    private static int GetUserId(ClaimsPrincipal user)
+    private static int? GetUserId(ClaimsPrincipal user)
     {
         string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null) return -1;
+        if (userId == null) return null;
 
         return int.Parse(userId);
     }
