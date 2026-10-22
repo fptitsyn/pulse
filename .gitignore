@@ -39,3 +39,6 @@ msbuild.wrn
 .vs/
 
 *.bak
+
+bruno-pulse/Pulse/Identity/
+bruno-pulse/environments/

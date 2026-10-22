@@ -66,6 +66,20 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
 
             entity.Property(e => e.HttpCodeId).HasColumnName("http_code_id");
             entity.Property(e => e.Code).HasColumnName("http_code");
+
+            entity.HasData(
+                new HttpCode { HttpCodeId = HttpCodeIds.Code200, Code = 200 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code201, Code = 201 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code204, Code = 204 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code301, Code = 301 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code302, Code = 302 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code304, Code = 304 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code400, Code = 400 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code401, Code = 401 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code403, Code = 403 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code404, Code = 404 },
+                new HttpCode { HttpCodeId = HttpCodeIds.Code500, Code = 500 }
+            );
         });
 
         modelBuilder.Entity<HttpMethod>(entity =>
@@ -81,6 +95,15 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
                 .HasColumnType("character varying")
                 .HasMaxLength(10)
                 .HasColumnName("http_method");
+            
+            entity.HasData(
+                new HttpMethod { HttpMethodId = HttpMethodIds.Head, Method = "HEAD" },
+                new HttpMethod { HttpMethodId = HttpMethodIds.Get, Method = "GET" },
+                new HttpMethod { HttpMethodId = HttpMethodIds.Post, Method = "POST" },
+                new HttpMethod { HttpMethodId = HttpMethodIds.Put, Method = "PUT" },
+                new HttpMethod { HttpMethodId = HttpMethodIds.Patch, Method = "PATCH" },
+                new HttpMethod { HttpMethodId = HttpMethodIds.Delete, Method = "DELETE" }
+            );
         });
 
         modelBuilder.Entity<Monitor>(entity =>
@@ -94,7 +117,6 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
             entity.Property(e => e.IntervalSeconds).HasColumnName("interval_seconds");
             entity.Property(e => e.Path)
                 .HasColumnType("character varying")
-                .HasMaxLength(50)
                 .HasColumnName("path");
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
 
@@ -118,7 +140,6 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
             entity.Property(e => e.ServiceId).HasColumnName("service_id");
             entity.Property(e => e.BaseUrl)
                 .HasColumnType("character varying")
-                .HasMaxLength(50)
                 .HasColumnName("base_url");
             entity.Property(e => e.Name).HasColumnName("name")
                 .HasColumnType("character varying")
@@ -150,6 +171,12 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
                 .HasColumnType("character varying")
                 .HasMaxLength(10)
                 .HasColumnName("service_status");
+            
+            entity.HasData(
+                new ServiceStatus { ServiceStatusId = ServiceStatusIds.Unknown, Status = "UNKNOWN" },
+                new ServiceStatus { ServiceStatusId = ServiceStatusIds.Up, Status = "UP" },
+                new ServiceStatus { ServiceStatusId = ServiceStatusIds.Down, Status = "DOWN" }
+            );
         });
     }
 }

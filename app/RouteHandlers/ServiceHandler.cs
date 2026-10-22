@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using app.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,11 +27,29 @@ public static class ServiceHandler
         });
 
         app.MapPost("/services",
-            async ([FromBody] Service service, PulseDbContext dbContext, CancellationToken cancellationToken) =>
+            async ([FromBody] ServiceDto serviceDto, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                await dbContext.Services.AddAsync(service, cancellationToken);
+                string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userId == null)
+                {
+                    return Results.Unauthorized();
+                }
+                
+                Service service = new Service
+                {
+                    ApplicationUserId = int.Parse(userId),
+                    Name = serviceDto.Name,
+                    BaseUrl = serviceDto.BaseUrl,
+                    ServiceStatusId = ServiceStatusIds.Unknown
+                };
+                
+                var entry = dbContext.Services.Add(service);
                 await dbContext.SaveChangesAsync(cancellationToken);
-            return Results.Created();
-        });
+
+                var entity = entry.Entity;
+                string uri = $"/services/{entity.ServiceId}";
+                
+                return Results.Created(uri, null); 
+            }).RequireAuthorization();
     }
 }

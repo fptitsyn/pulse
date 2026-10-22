@@ -10,12 +10,12 @@ http:
     type: json
     data: |-
       {
-        "applicationUserId": 1,
-        "baseUrl": "postgresql.org",
-        "name": "postgres",
-        "serviceStatusId": 3
+        "baseUrl": "https://postgresql.org",
+        "name": "asd"
       }
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

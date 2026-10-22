@@ -1,6 +1,8 @@
-﻿namespace app.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
-public partial class Service
+namespace app.Models;
+
+public class Service
 {
     public int ServiceId { get; set; }
 
@@ -17,4 +19,15 @@ public partial class Service
     public virtual ServiceStatus ServiceStatus { get; set; } = null!;
 
     public virtual ApplicationUser User { get; set; } = null!;
+}
+
+public class ServiceDto
+{
+    [Required]
+    [Url]
+    public required string BaseUrl { get; set; }
+
+    [Required]
+    [StringLength(30)]
+    public required string Name { get; set; }
 }
