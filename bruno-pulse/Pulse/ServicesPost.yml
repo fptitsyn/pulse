@@ -10,12 +10,12 @@ http:
     type: json
     data: |-
       {
-        "baseUrl": "https://postgresql.org",
-        "name": "asd"
+        "baseUrl": "http://mirea.ru",
+        "name": "mirea"
       }
   auth:
     type: bearer
-    token: "{{bearer_token}}"
+    token: "{{bearer2_token}}"
 
 settings:
   encodeUrl: true

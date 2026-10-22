@@ -1,0 +1,25 @@
+info:
+  name: ServicesUpdate
+  type: http
+  seq: 6
+
+http:
+  method: PUT
+  url: localhost:5069/services/4
+  body:
+    type: json
+    data: |-
+      {
+        "baseUrl": "http://updated.com",
+        "name": "updated"
+      }
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
