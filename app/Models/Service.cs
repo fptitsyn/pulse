@@ -30,6 +30,4 @@ public class ServiceDto
     [Required]
     [StringLength(30)]
     public required string Name { get; set; }
-    
-    public short? ServiceStatusId { get; set; }
 }

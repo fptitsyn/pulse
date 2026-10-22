@@ -11,11 +11,11 @@ http:
     data: |-
       {
         "baseUrl": "https://postgresql.org",
-        "name": ""
+        "name": "asd"
       }
   auth:
     type: bearer
-    token: CfDJ8LuYLWqQaERJsBWGzHcE3NxPLyFfRdPX79vb3nsYvkUwM_Ak-MCgQCGvEHBCHNi5IJrvvFjqI_Lb-DrlC0Bq2DVssSeqH1vQIUr6lELjcz_BtaX6-BepogCkzCTXcyPCvZ51sgXVYc6khUylvjKn-UpST_7QMIM6WEEMvhupwruvkyR_jpaEqBw3XYwdzukbogYdd0gaSRUOPRRzSj58jRew-C-ItkHp_6fmtjtndIoxNV5fiMaOTUEMR8u8ZHQu_S7x4Kd-abThh4V1kF55E1wfssYEyUppdP8mALEhzathqMzQz1N_20qY6h53UElnnKnZXEreX2n-A7AaUl2FQKLUeKI57lQvMfRDqdk4lGwbY6EMcxc98YpGg6HJCEjsOSySYpqxywjHe5V3TRXtQWZv8r2dI5v5PKSSQqT4-s7VHLEFlNX_dBsdK_XkBGBvFk5n4kL4E-6cpgR4HwiF44OJmSquC-YwgR1-y4BnZZP68c2kiAlIvvbacf7UVvKLlS1o3d376xX4al0U2jkiCK9a9FRG0T_GPoT5-dhFjyX0vWay_ZiTAymt6kkljUFv3Wzw4QY6zlmVVUb1FXTBgb8Q4-Y_V8OsfggMsbXr5fSgtRY--n2STYgxfRIHrEsUz2GHA1XrpLB3GXRWQ8NPJkg
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

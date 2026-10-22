@@ -34,11 +34,6 @@ public static class ServiceHandler
                 {
                     return Results.Unauthorized();
                 }
-
-                if (serviceDto.Name.All(char.IsDigit))
-                {
-                    return Results.BadRequest(new { error = "Invalid service name" });
-                }
                 
                 Service service = new Service
                 {
@@ -52,11 +47,9 @@ public static class ServiceHandler
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 var entity = entry.Entity;
-                Uri uri = new Uri($"/services/{entity.ServiceId}");
+                string uri = $"/services/{entity.ServiceId}";
                 
-                serviceDto.ServiceStatusId = ServiceStatusIds.Unknown;
-                
-                return Results.Created(uri, serviceDto); 
+                return Results.Created(uri, null); 
             }).RequireAuthorization();
     }
 }
