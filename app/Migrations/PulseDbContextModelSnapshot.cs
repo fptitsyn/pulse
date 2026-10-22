@@ -416,7 +416,6 @@ namespace app.Migrations
 
                     b.Property<string>("Path")
                         .IsRequired()
-                        .HasMaxLength(50)
                         .HasColumnType("character varying")
                         .HasColumnName("path");
 
@@ -449,7 +448,6 @@ namespace app.Migrations
 
                     b.Property<string>("BaseUrl")
                         .IsRequired()
-                        .HasMaxLength(50)
                         .HasColumnType("character varying")
                         .HasColumnName("base_url");
 
