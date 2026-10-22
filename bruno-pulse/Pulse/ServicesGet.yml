@@ -5,8 +5,10 @@ info:
 
 http:
   method: GET
-  url: localhost:5069/services/1
-  auth: inherit
+  url: localhost:5069/services/6
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

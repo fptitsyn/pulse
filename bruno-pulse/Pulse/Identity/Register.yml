@@ -1,0 +1,23 @@
+info:
+  name: Register
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: localhost:5069/register
+  body:
+    type: json
+    data: |-
+      {
+        "email": "semyon@example.com",
+        "password": {{test_password}}
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
