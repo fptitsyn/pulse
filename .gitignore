@@ -40,5 +40,4 @@ msbuild.wrn
 
 *.bak
 
-bruno-pulse/Pulse/Identity/
 bruno-pulse/environments/

@@ -13,18 +13,30 @@ public static class ServiceHandler
         {
             var services = await dbContext.Services.ToListAsync(cancellationToken);
             return Results.Ok(services);
-        });
+        }).RequireAuthorization();
 
-        app.MapGet("/services/{id}", async (int id, PulseDbContext dbContext, CancellationToken cancellationToken) =>
+        app.MapGet("/services/{id}",
+            async (int id, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
         {
+            string? userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return Results.Unauthorized();
+            }
+            
             Service? service = await dbContext.Services.FindAsync(id, cancellationToken);
+            
             if (service == null)
             {
                 return Results.NotFound();
             }
+            if (service.ApplicationUserId != int.Parse(userId))
+            {
+                return Results.Forbid();
+            }
             
             return Results.Ok(service);
-        });
+        }).RequireAuthorization();
 
         app.MapPost("/services",
             async ([FromBody] ServiceDto serviceDto, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
