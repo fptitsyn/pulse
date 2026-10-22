@@ -13,9 +13,11 @@ http:
         "applicationUserId": 1,
         "baseUrl": "postgresql.org",
         "name": "postgres",
-        "serviceStatusId": 3
+        "serviceStatusId": 1
       }
-  auth: inherit
+  auth:
+    type: bearer
+    token: CfDJ8LuYLWqQaERJsBWGzHcE3NzV0vh6PlJPv5cpCHGaI0h-YPOxR8KBqfURbs_2NJswia53MwjvhWEs75DJadGVpePAugKjfSbrEF0F5w5cV92rs-bwfXn30CKkAjYBt4pkUnbbPjPNniBICHnhLUV7sFYG33qncLFQ-m7e7RiywUeef0s1kmVIQkld-oFjPWSYgMGEWgMxUehaaTGaf7_p__TQs1kj7hIWdaMuOr7OQuxq17rvfVTgFCbnx_z2zIJZHVJMSdfMdxOfxREJZ9RYrxofcu6goS05y1MLwpGvfhHdt7pMbsOh8q1XpCTPUFL9kcETf9AXv2k0ri34C6lEdwhJ4ieLWxD77aqOSplQbxtkMF35rKOkfdK1nCLU31M4W8yiN1fHegRzAau1TpQr-uDnnIc0NMcJveCSdHIjq_LbbRTE8YJNJ8GLyQFN3YT3eW_FsGHiVb1tWxCBEUJeE7JeV3bI5xqgb5_sTlf2-x0Kvual09Yc84xTVR9WFFeBOfayzL9IdMxrT0e1GeM0_zdxnoArU5nnKKGBxvXXqapfMAeM3w7XmaIt3SxsnbnAo9vE0zauHZcVoFJOfitmzGFHOWNlmlWI-Om1nz1E4ykAfc-Z3_FD4B9o1AuKFDc-9HVU6Us_A9mEUs8VTyBkcrI
 
 settings:
   encodeUrl: true

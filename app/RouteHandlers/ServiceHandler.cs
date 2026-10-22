@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using app.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,9 +47,11 @@ public static class ServiceHandler
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 var entity = entry.Entity;
-                Uri uri = new Uri($"localhost:5069/services/{entity.ServiceId}");
+                Uri uri = new Uri($"/services/{entity.ServiceId}");
                 
-            return Results.Created(uri, entity);
-        }).RequireAuthorization();
+                serviceDto.ServiceStatusId = ServiceStatusIds.Unknown;
+                
+                return Results.Created(uri, serviceDto); 
+            }).RequireAuthorization();
     }
 }

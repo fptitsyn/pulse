@@ -24,4 +24,6 @@ public class ServiceDto
     public string BaseUrl { get; set; } = null!;
 
     public string Name { get; set; } = null!;
+    
+    public short? ServiceStatusId { get; set; }
 }
