@@ -34,6 +34,11 @@ public static class ServiceHandler
                 {
                     return Results.Unauthorized();
                 }
+
+                if (serviceDto.Name.All(char.IsDigit))
+                {
+                    return Results.BadRequest(new { error = "Invalid service name" });
+                }
                 
                 Service service = new Service
                 {

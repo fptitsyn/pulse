@@ -9,6 +9,8 @@ var connectionString = builder.Configuration.GetConnectionString("ConnStr");
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
 
+builder.Services.AddValidation();
+
 builder.Services.AddIdentityApiEndpoints<ApplicationUser>()
     .AddEntityFrameworkStores<PulseDbContext>();
 

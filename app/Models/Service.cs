@@ -1,4 +1,6 @@
-﻿namespace app.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace app.Models;
 
 public class Service
 {
@@ -21,9 +23,13 @@ public class Service
 
 public class ServiceDto
 {
-    public string BaseUrl { get; set; } = null!;
+    [Required]
+    [Url]
+    public required string BaseUrl { get; set; }
 
-    public string Name { get; set; } = null!;
+    [Required]
+    [StringLength(30)]
+    public required string Name { get; set; }
     
     public short? ServiceStatusId { get; set; }
 }
