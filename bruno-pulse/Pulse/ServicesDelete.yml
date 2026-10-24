@@ -5,7 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: localhost:5069/services/7
+  url: localhost:5069/services/10
   auth:
     type: bearer
     token: "{{bearer_token}}"

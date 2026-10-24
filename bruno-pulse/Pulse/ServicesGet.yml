@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: localhost:5069/services/6
+  url: localhost:5069/services/11
   auth:
     type: bearer
     token: "{{bearer_token}}"

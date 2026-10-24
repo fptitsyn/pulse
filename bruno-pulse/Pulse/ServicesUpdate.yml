@@ -5,7 +5,7 @@ info:
 
 http:
   method: PUT
-  url: localhost:5069/services/4
+  url: localhost:5069/services/11
   body:
     type: json
     data: |-
