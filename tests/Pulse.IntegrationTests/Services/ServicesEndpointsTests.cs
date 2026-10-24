@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using app.Models;
 using Microsoft.AspNetCore.Identity;
@@ -14,10 +15,14 @@ namespace Pulse.IntegrationTests.Services;
 public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
-
-    private const string TestEmailA = "testA@example.com";
-    private const string TestEmailB = "testB@example.com";
+    
     private const string TestPassword = "TestPassword123!";
+
+    private readonly ServiceDto _testService = new()
+    {
+        Name = "testName",
+        BaseUrl = "http://test.com"
+    };
 
     public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
@@ -85,15 +90,9 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         // Arrange
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
-
-        ServiceDto serviceDto = new ServiceDto
-        {
-            Name = "testName",
-            BaseUrl = "http://test-url.com"
-        };
         
         // Act
-        using var response = await client.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        using var response = await client.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
 
         var location = response.Headers.Location;
         
@@ -132,24 +131,19 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     public async Task GetServices_ReturnsOnlyCurrentUsersServices()
     {
         // Arrange
-        var clientA =
-            await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), TestEmailA, TestPassword);
-        var clientB =
-            await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), TestEmailB, TestPassword);
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
-        ServiceDto serviceDto = new ServiceDto
-        {
-            Name = "testName",
-            BaseUrl = "http://test.com"
-        };
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
         
-        using var responseA1 = await clientA.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
         
-        using var responseA2 = await clientA.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        using var responseA2 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseA2.EnsureSuccessStatusCode();
         
-        using var responseB1 = await clientB.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseB1.EnsureSuccessStatusCode();
         
         // Act
@@ -161,29 +155,148 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         Assert.Equal(2, json.RootElement.GetArrayLength());
     }
 
+    [Fact]
     public async Task GetService_OwnedByAnotherUser_ReturnsNotFound()
     {
+        // Arrange
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        responseA1.EnsureSuccessStatusCode();
+        
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        responseB1.EnsureSuccessStatusCode();
+        var location = responseB1.Headers.Location;
+        
+        // Act
+        using var getResponse = await clientA.GetAsync(location, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
     
+    [Fact]
     public async Task UpdateService_OwnedByAnotherUser_ReturnsNotFound()
     {
+        // Arrange
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        
+        ServiceDto serviceDto = new ServiceDto
+        {
+            Name = "testName",
+            BaseUrl = "http://test.com"
+        };
+        
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        responseA1.EnsureSuccessStatusCode();
+        
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        responseB1.EnsureSuccessStatusCode();
+        var location = responseB1.Headers.Location;
+        
+        serviceDto.Name = "updatedName";
+        // Act
+        using var putResponse = await clientA.PutAsJsonAsync(location, serviceDto, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
     }
     
+    [Fact]
     public async Task DeleteService_OwnedByAnotherUser_ReturnsNotFound()
     {
+        // Arrange
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        responseA1.EnsureSuccessStatusCode();
+        
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        responseB1.EnsureSuccessStatusCode();
+        var location = responseB1.Headers.Location;
+        
+        // Act
+        using var deleteResponse = await clientA.DeleteAsync(location, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
     }
     
     // CRUD
-    public async Task UpdateService_AsOwner_PersistsChanges()
+    [Theory]
+    [InlineData("testName", "https://test-url.com")]
+    [InlineData("testName", "http://pulse.com")]
+    [InlineData("updatedName", "http://test.com")]
+    [InlineData("testName", "http://test.com")]
+    public async Task UpdateService_AsOwner_PersistsChanges(string name, string baseUrl)
     {
+        // Arrange
+        string testEmail = $"test{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+
+        ServiceDto serviceDto = new ServiceDto
+        {
+            Name = "testName",
+            BaseUrl = "http://test.com"
+        };
+
+        using var postResponse = await client.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        postResponse.EnsureSuccessStatusCode();
+        var location = postResponse.Headers.Location;
+
+        serviceDto.Name = name;
+        serviceDto.BaseUrl = baseUrl;
         
+        // Act
+        using var putResponse = await client.PutAsJsonAsync(location, serviceDto, TestContext.Current.CancellationToken);
+        putResponse.EnsureSuccessStatusCode();
+
+        using var getResponse = await client.GetAsync(location, TestContext.Current.CancellationToken);
+        getResponse.EnsureSuccessStatusCode();
+
+        using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        var finalName = json.RootElement
+            .GetProperty("name")
+            .GetString();
+        var finalUrl = json.RootElement
+            .GetProperty("baseUrl")
+            .GetString();
+        
+        // Assert
+        Assert.Equal(name, finalName);
+        Assert.Equal(baseUrl, finalUrl);
     }
 
+    [Fact]
     public async Task DeleteService_AsOwner_RemovesService()
     {
+        // Arrange
+        string testEmail = $"test{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+
+        using var postResponse = await client.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        postResponse.EnsureSuccessStatusCode();
+        var location = postResponse.Headers.Location;
         
+        // Act
+        using var deleteResponse = await client.DeleteAsync(location, TestContext.Current.CancellationToken);
+        deleteResponse.EnsureSuccessStatusCode();
+
+        using var getResponse = await client.GetAsync(location, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 }
