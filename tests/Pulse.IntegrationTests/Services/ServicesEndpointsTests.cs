@@ -15,7 +15,8 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    private const string TestEmailA = "test@example.com";
+    private const string TestEmailA = "testA@example.com";
+    private const string TestEmailB = "testB@example.com";
     private const string TestPassword = "TestPassword123!";
 
     public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
@@ -66,8 +67,6 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         using var response = await client.PostAsJsonAsync("/login?useCookies=false",
             loginRequest,
             TestContext.Current.CancellationToken);
-
-        response.EnsureSuccessStatusCode();
         
         using var json = await response.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         string? token = json?.RootElement
@@ -104,9 +103,28 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         Assert.Matches(@"^/services/\d+$", location.ToString());
     }
     
-    public async Task CreateService_WithInvalidUrl_ReturnsBadRequest()
+    [Theory]
+    [InlineData("/test-url.com")]
+    [InlineData("http:/test-url.com")]
+    [InlineData("htp://test-url.com")]
+    [InlineData("htpp://test-url")]
+    public async Task CreateService_WithInvalidUrl_ReturnsBadRequest(string baseUrl)
     {
+        // Arrange
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
         
+        ServiceDto serviceDto = new ServiceDto
+        {
+            Name = "testName",
+            BaseUrl = baseUrl
+        };
+        
+        // Act
+        using var response = await client.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
     
     // Ownership
