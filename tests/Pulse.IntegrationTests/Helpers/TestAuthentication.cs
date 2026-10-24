@@ -7,7 +7,7 @@ namespace Pulse.IntegrationTests.Helpers;
 
 public static class TestAuthentication
 {
-    public async static Task RegisterUserAsync(HttpClient client, string email, string password)
+    public static async Task RegisterUserAsync(HttpClient client, string email, string password)
     {
         var request = new
         {
@@ -42,9 +42,9 @@ public static class TestAuthentication
             .GetProperty("accessToken")
             .GetString();
 
-        if (token == null)
+        if (string.IsNullOrWhiteSpace(token))
         {
-            throw new HttpIOException(HttpRequestError.UserAuthenticationError, "Login Bearer token is null");
+            throw new InvalidOperationException("Login Bearer token is null");
         }
         
         return token;

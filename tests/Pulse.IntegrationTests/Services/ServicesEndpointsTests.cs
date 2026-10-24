@@ -15,18 +15,19 @@ namespace Pulse.IntegrationTests.Services;
 public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
+    private readonly ITestOutputHelper _output;
     
     private const string TestPassword = "TestPassword123!";
-
     private readonly ServiceDto _testService = new()
     {
         Name = "testName",
         BaseUrl = "http://test.com"
     };
 
-    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
+    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory, ITestOutputHelper output)
     {
         _factory = factory;
+        _output = output;
     }
 
     // Auth
@@ -143,6 +144,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         getResponseInitial.EnsureSuccessStatusCode();
         using var initialJson = await getResponseInitial.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         int initialCount = initialJson.RootElement.GetArrayLength();
+        Assert.Equal(0, initialCount);
         
         using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
@@ -159,7 +161,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 
         using var json = await getResponseA.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         // Assert
-        Assert.Equal(initialCount + 2, json.RootElement.GetArrayLength());
+        Assert.Equal(2, json.RootElement.GetArrayLength());
     }
 
     [Fact]
@@ -206,7 +208,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         ServiceDto updatedServiceDto = new ServiceDto
         {
             Name = "UpdatedName",
-            BaseUrl = "BaseUrl"
+            BaseUrl = "http://updated-test.com"
         };
         
         // Act
@@ -215,12 +217,13 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         using var getResponseB = await clientB.GetAsync(location, TestContext.Current.CancellationToken);
         getResponseB.EnsureSuccessStatusCode();
         using var json = await getResponseB.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        var service = json.Deserialize<Service>();
+        var serviceName = json.RootElement.GetProperty("name").GetString();
+        var baseUrl = json.RootElement.GetProperty("baseUrl").GetString();
         
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
-        Assert.Equal(updatedServiceDto.Name, service.Name);
-        Assert.Equal(updatedServiceDto.BaseUrl, service.BaseUrl);
+        Assert.Equal(_testService.Name, serviceName);
+        Assert.Equal(_testService.BaseUrl, baseUrl);
     }
     
     [Fact]
