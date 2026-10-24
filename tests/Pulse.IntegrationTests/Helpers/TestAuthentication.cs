@@ -7,7 +7,7 @@ namespace Pulse.IntegrationTests.Helpers;
 
 public static class TestAuthentication
 {
-    public static Task RegisterUserAsync(HttpClient client, string email, string password)
+    public async static Task RegisterUserAsync(HttpClient client, string email, string password)
     {
         var request = new
         {
@@ -15,9 +15,12 @@ public static class TestAuthentication
             password
         };
 
-        return client.PostAsJsonAsync("/register",
+        using var response = await client.PostAsJsonAsync(
+            "/register",
             request,
             TestContext.Current.CancellationToken);
+
+        response.EnsureSuccessStatusCode();
     }
 
     public static async Task<string> LoginAsync(HttpClient client, string email, string password)
@@ -28,11 +31,13 @@ public static class TestAuthentication
             password
         };
 
-        var response = await client.PostAsJsonAsync("/login?useCookies=false",
+        using var response = await client.PostAsJsonAsync("/login?useCookies=false",
             request,
             TestContext.Current.CancellationToken);
-        using var json = await response.Content.ReadFromJsonAsync<JsonDocument>();
+
+        response.EnsureSuccessStatusCode();
         
+        using var json = await response.Content.ReadFromJsonAsync<JsonDocument>();
         string? token = json.RootElement
             .GetProperty("accessToken")
             .GetString();

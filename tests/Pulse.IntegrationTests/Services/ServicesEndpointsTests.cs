@@ -15,9 +15,9 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    private string _testEmailA = "test@example.com";
-    private string _testPasswordA = "TestPassword123!";
-    
+    private const string TestEmailA = "test@example.com";
+    private const string TestPassword = "TestPassword123!";
+
     public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
         _factory = factory;
@@ -31,7 +31,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         var client = _factory.CreateClient();
 
         // Act
-        var response = await client.GetAsync("/services", TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync("/services", TestContext.Current.CancellationToken);
         
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -45,25 +45,29 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 
         using var scope = _factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         
         var user = new ApplicationUser
         {
-            UserName = _testEmailA,
-            Email = _testEmailA
+            UserName = testEmail,
+            Email = testEmail
         };
         
-        await userManager.CreateAsync(user, _testPasswordA);
+        await userManager.CreateAsync(user, TestPassword);
         
         var loginRequest = new
         {
-            _testEmailA,
-            _testPasswordA
+            email = testEmail,
+            password = TestPassword
         };
         
         // Act
-        var response = await client.PostAsJsonAsync("/login?useCookies=false",
+        using var response = await client.PostAsJsonAsync("/login?useCookies=false",
             loginRequest,
             TestContext.Current.CancellationToken);
+
+        response.EnsureSuccessStatusCode();
         
         using var json = await response.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         string? token = json?.RootElement
@@ -79,7 +83,25 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     [Fact]
     public async Task CreateService_WithValidData_ReturnsCreated()
     {
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(new HttpClient(), _testEmailA, _testPasswordA);
+        // Arrange
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+
+        ServiceDto serviceDto = new ServiceDto
+        {
+            Name = "testName",
+            BaseUrl = "http://test-url.com"
+        };
+        
+        // Act
+        using var response = await client.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+
+        var location = response.Headers.Location;
+        
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotNull(location);
+        Assert.Matches(@"^/services/\d+$", location.ToString());
     }
     
     public async Task CreateService_WithInvalidUrl_ReturnsBadRequest()
