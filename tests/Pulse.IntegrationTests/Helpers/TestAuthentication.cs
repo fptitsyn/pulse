@@ -37,11 +37,16 @@ public static class TestAuthentication
 
         response.EnsureSuccessStatusCode();
         
-        using var json = await response.Content.ReadFromJsonAsync<JsonDocument>();
-        string? token = json.RootElement
+        using var json = await response.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        string token = json.RootElement
             .GetProperty("accessToken")
             .GetString();
 
+        if (token == null)
+        {
+            throw new HttpIOException(HttpRequestError.UserAuthenticationError, "Login Bearer token is null");
+        }
+        
         return token;
     }
 

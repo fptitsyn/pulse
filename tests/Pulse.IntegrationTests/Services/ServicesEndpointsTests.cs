@@ -60,7 +60,8 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
             Email = testEmail
         };
         
-        await userManager.CreateAsync(user, TestPassword);
+        var result = await userManager.CreateAsync(user, TestPassword);
+        Assert.True(result.Succeeded);
         
         var loginRequest = new
         {
@@ -73,13 +74,14 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
             loginRequest,
             TestContext.Current.CancellationToken);
         
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        
         using var json = await response.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         string? token = json?.RootElement
             .GetProperty("accessToken")
             .GetString();
         
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.False(string.IsNullOrWhiteSpace(token));
     }
 
@@ -136,6 +138,11 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         
         var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
         var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+
+        using var getResponseInitial = await clientA.GetAsync("/services", TestContext.Current.CancellationToken);
+        getResponseInitial.EnsureSuccessStatusCode();
+        using var initialJson = await getResponseInitial.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        int initialCount = initialJson.RootElement.GetArrayLength();
         
         using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
@@ -152,7 +159,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 
         using var json = await getResponseA.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         // Assert
-        Assert.Equal(2, json.RootElement.GetArrayLength());
+        Assert.Equal(initialCount + 2, json.RootElement.GetArrayLength());
     }
 
     [Fact]
@@ -189,25 +196,31 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
         var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
         
-        ServiceDto serviceDto = new ServiceDto
-        {
-            Name = "testName",
-            BaseUrl = "http://test.com"
-        };
-        
-        using var responseA1 = await clientA.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
         
-        using var responseB1 = await clientB.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
         responseB1.EnsureSuccessStatusCode();
         var location = responseB1.Headers.Location;
-        
-        serviceDto.Name = "updatedName";
-        // Act
-        using var putResponse = await clientA.PutAsJsonAsync(location, serviceDto, TestContext.Current.CancellationToken);
 
+        ServiceDto updatedServiceDto = new ServiceDto
+        {
+            Name = "UpdatedName",
+            BaseUrl = "BaseUrl"
+        };
+        
+        // Act
+        using var putResponse = await clientA.PutAsJsonAsync(location, updatedServiceDto, TestContext.Current.CancellationToken);
+
+        using var getResponseB = await clientB.GetAsync(location, TestContext.Current.CancellationToken);
+        getResponseB.EnsureSuccessStatusCode();
+        using var json = await getResponseB.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        var service = json.Deserialize<Service>();
+        
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
+        Assert.Equal(updatedServiceDto.Name, service.Name);
+        Assert.Equal(updatedServiceDto.BaseUrl, service.BaseUrl);
     }
     
     [Fact]
@@ -229,9 +242,11 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         
         // Act
         using var deleteResponse = await clientA.DeleteAsync(location, TestContext.Current.CancellationToken);
-
+        using var getResponseB = await clientB.GetAsync(location, TestContext.Current.CancellationToken);
+        
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, getResponseB.StatusCode);
     }
     
     // CRUD
@@ -261,7 +276,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         
         // Act
         using var putResponse = await client.PutAsJsonAsync(location, serviceDto, TestContext.Current.CancellationToken);
-        putResponse.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NoContent, putResponse.StatusCode);
 
         using var getResponse = await client.GetAsync(location, TestContext.Current.CancellationToken);
         getResponse.EnsureSuccessStatusCode();
@@ -292,7 +307,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         
         // Act
         using var deleteResponse = await client.DeleteAsync(location, TestContext.Current.CancellationToken);
-        deleteResponse.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
 
         using var getResponse = await client.GetAsync(location, TestContext.Current.CancellationToken);
 
