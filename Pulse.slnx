@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/Pulse.IntegrationTests/Pulse.IntegrationTests.csproj" />
+  </Folder>
+  <Project Path="app/app.csproj" />
+</Solution>

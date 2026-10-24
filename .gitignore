@@ -1,5 +1,6 @@
 *.pgerd
-.env
+*.diff
+
 *.swp
 *.*~
 project.lock.json
@@ -41,3 +42,5 @@ msbuild.wrn
 *.bak
 
 bruno-pulse/environments/
+TestResults/
+CoverageReport/
