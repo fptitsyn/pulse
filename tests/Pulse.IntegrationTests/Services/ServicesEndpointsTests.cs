@@ -128,9 +128,37 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     }
     
     // Ownership
+    [Fact]
     public async Task GetServices_ReturnsOnlyCurrentUsersServices()
     {
+        // Arrange
+        var clientA =
+            await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), TestEmailA, TestPassword);
+        var clientB =
+            await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), TestEmailB, TestPassword);
         
+        ServiceDto serviceDto = new ServiceDto
+        {
+            Name = "testName",
+            BaseUrl = "http://test.com"
+        };
+        
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        responseA1.EnsureSuccessStatusCode();
+        
+        using var responseA2 = await clientA.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        responseA2.EnsureSuccessStatusCode();
+        
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);
+        responseB1.EnsureSuccessStatusCode();
+        
+        // Act
+        using var getResponseA = await clientA.GetAsync("/services", TestContext.Current.CancellationToken);
+        getResponseA.EnsureSuccessStatusCode();
+
+        using var json = await getResponseA.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        // Assert
+        Assert.Equal(2, json.RootElement.GetArrayLength());
     }
 
     public async Task GetService_OwnedByAnotherUser_ReturnsNotFound()
