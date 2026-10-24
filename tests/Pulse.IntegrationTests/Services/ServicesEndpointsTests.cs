@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using app.Models;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Pulse.IntegrationTests.Fixtures;
+using Pulse.IntegrationTests.Helpers;
 
 namespace Pulse.IntegrationTests.Services;
 
@@ -13,11 +15,15 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 {
     private readonly WebApplicationFactory<Program> _factory;
 
+    private string _testEmailA = "test@example.com";
+    private string _testPasswordA = "TestPassword123!";
+    
     public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
         _factory = factory;
     }
 
+    // Auth
     [Fact]
     public async Task GetServices_WithoutToken_ReturnsUnauthorized()
     {
@@ -39,22 +45,19 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
 
         using var scope = _factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-        string email = "test@example.com";
-        string password = "TestPassword123!";
         
         var user = new ApplicationUser
         {
-            UserName = email,
-            Email = email
+            UserName = _testEmailA,
+            Email = _testEmailA
         };
         
-        await userManager.CreateAsync(user, password);
+        await userManager.CreateAsync(user, _testPasswordA);
         
         var loginRequest = new
         {
-            email,
-            password
+            _testEmailA,
+            _testPasswordA
         };
         
         // Act
@@ -70,5 +73,49 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.False(string.IsNullOrWhiteSpace(token));
+    }
+
+    // Service creation
+    [Fact]
+    public async Task CreateService_WithValidData_ReturnsCreated()
+    {
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(new HttpClient(), _testEmailA, _testPasswordA);
+    }
+    
+    public async Task CreateService_WithInvalidUrl_ReturnsBadRequest()
+    {
+        
+    }
+    
+    // Ownership
+    public async Task GetServices_ReturnsOnlyCurrentUsersServices()
+    {
+        
+    }
+
+    public async Task GetService_OwnedByAnotherUser_ReturnsNotFound()
+    {
+        
+    }
+    
+    public async Task UpdateService_OwnedByAnotherUser_ReturnsNotFound()
+    {
+        
+    }
+    
+    public async Task DeleteService_OwnedByAnotherUser_ReturnsNotFound()
+    {
+        
+    }
+    
+    // CRUD
+    public async Task UpdateService_AsOwner_PersistsChanges()
+    {
+        
+    }
+
+    public async Task DeleteService_AsOwner_RemovesService()
+    {
+        
     }
 }

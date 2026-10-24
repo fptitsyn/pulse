@@ -10,7 +10,7 @@ namespace Pulse.IntegrationTests.Fixtures;
 public class PulseWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram>, IAsyncLifetime where TProgram : class
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
-
+    
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
