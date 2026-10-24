@@ -41,3 +41,5 @@ msbuild.wrn
 *.bak
 
 bruno-pulse/environments/
+TestResults/
+CoverageReport/
