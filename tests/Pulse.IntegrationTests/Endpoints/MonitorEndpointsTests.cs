@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using app.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Pulse.IntegrationTests.Fixtures;
 using Pulse.IntegrationTests.Helpers;
@@ -66,5 +67,56 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         Assert.Equal(TestConstants.TestMonitor.Path, path);
         Assert.Equal(TestConstants.TestMonitor.IntervalSeconds, intervalSeconds);
         Assert.Equal(TestConstants.TestMonitor.HttpMethodId, httpMethodId);
+    }
+
+    [Theory]
+    [InlineData("testPath", 3, 1)]
+    [InlineData("updatedPath", 5, 2)]
+    [InlineData("testPath", 5, 1)]
+    [InlineData("testPath", 3, 2)]
+    [InlineData("updatedPath", 3, 1)]
+    public async Task UpdateMonitor_WithValidData_IsSuccessful(string path, int intervalSeconds, short httpMethodId)
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+
+        MonitorDto initialMonitor = new()
+        {
+            Path = "testPath",
+            IntervalSeconds = 3,
+            HttpMethodId = 1
+        };
+        
+        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", initialMonitor,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
+        var monitorLocation = monitorResponse.Headers.Location;
+
+        initialMonitor.Path = path;
+        initialMonitor.IntervalSeconds = intervalSeconds;
+        initialMonitor.HttpMethodId = httpMethodId;
+
+        using var updateMonitorResponse =
+            await client.PutAsJsonAsync(monitorLocation, initialMonitor, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NoContent, updateMonitorResponse.StatusCode);
+
+        using var getUpdatedMonitor = await client.GetAsync(monitorLocation, TestContext.Current.CancellationToken);
+        
+        using var json =
+            await getUpdatedMonitor.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        
+        var updatedPath = json.RootElement.GetProperty("path").GetString();
+        var updatedIntervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
+        var updatedHttpMethodId = json.RootElement.GetProperty("httpMethodId").GetInt16();
+        
+        Assert.Equal(path, updatedPath);
+        Assert.Equal(intervalSeconds, updatedIntervalSeconds);
+        Assert.Equal(httpMethodId, updatedHttpMethodId);
     }
 }
