@@ -121,7 +121,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     }
 
     [Fact]
-    public async Task GetMonitor_ForInvalidService_ReturnsNotFound()
+    public async Task GetMonitor_OwnedByAnotherUser_ReturnsNotFound()
     {
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
         var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
@@ -139,7 +139,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var getB = await clientB.GetAsync(monitorLocationB, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getB.StatusCode);
         using var getBWrong = await clientB.GetAsync(monitorLocationA, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, getBWrong.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, getBWrong.StatusCode);
     }
 
     private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)

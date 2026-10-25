@@ -28,7 +28,6 @@ public class MonitorDto
     [Required]
     [Range(1, 60 * 60 * 24)]
     public int IntervalSeconds { get; set; }
-    [Required]
     [Range(1, 6)]
     public short HttpMethodId { get; set; }
 }
