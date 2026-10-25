@@ -119,4 +119,28 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         Assert.Equal(intervalSeconds, updatedIntervalSeconds);
         Assert.Equal(httpMethodId, updatedHttpMethodId);
     }
+
+    [Fact]
+    public async Task DeleteMonitor_IsSuccessful()
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+        
+        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", TestConstants.TestMonitor,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
+        var monitorLocation = monitorResponse.Headers.Location;
+
+        using var deleteMonitor = await client.DeleteAsync(monitorLocation, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NoContent, deleteMonitor.StatusCode);
+        
+        using var tryGetDeletedMonitor = await client.GetAsync(monitorLocation, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, tryGetDeletedMonitor.StatusCode);
+    }
 }
