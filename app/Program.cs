@@ -33,6 +33,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.RegisterServiceRoutes();
+app.RegisterMonitorRoutes();
 app.MapIdentityApi<ApplicationUser>();
 
 app.UseAuthentication();

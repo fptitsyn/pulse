@@ -1,7 +1,5 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using app.Models;
 using Microsoft.AspNetCore.Identity;
@@ -15,7 +13,6 @@ namespace Pulse.IntegrationTests.Services;
 public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
-    private readonly ITestOutputHelper _output;
     
     private const string TestPassword = "TestPassword123!";
     private readonly ServiceDto _testService = new()
@@ -24,10 +21,9 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         BaseUrl = "http://test.com"
     };
 
-    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory, ITestOutputHelper output)
+    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
         _factory = factory;
-        _output = output;
     }
 
     // Auth

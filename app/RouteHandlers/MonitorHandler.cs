@@ -1,0 +1,67 @@
+using System.Security.Claims;
+using app.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Monitor = app.Models.Monitor;
+
+namespace app.RouteHandlers;
+
+public static class MonitorHandler
+{
+    private const string BaseUrl = "/services/{serviceId}/monitors/";
+
+    public static void RegisterMonitorRoutes(this WebApplication app)
+    {
+        app.MapGet(BaseUrl,
+            async (int serviceId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
+            {
+                int? userId = RouteHelper.GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
+
+                var monitors = await dbContext.Monitors
+                    .Where(m => m.Service.ApplicationUserId == userId && m.ServiceId == serviceId)
+                    .ToListAsync(token);
+
+                return Results.Ok(monitors);
+            }).RequireAuthorization();
+
+        app.MapGet(BaseUrl + "{monitorId}",
+            async (int serviceId, int monitorId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
+            {
+                int? userId = RouteHelper.GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
+
+                var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
+                    m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                if (monitor == null) return Results.NotFound();
+
+                return Results.Ok(monitor);
+            }).RequireAuthorization();
+
+        app.MapPost(BaseUrl,
+            async ([FromBody] MonitorDto monitorDto, int serviceId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
+            {
+                int? userId = RouteHelper.GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
+
+                var service = await dbContext.Services.FirstOrDefaultAsync(s => 
+                        s.ServiceId == serviceId && s.ApplicationUserId == userId, token);
+                if (service == null) return Results.NotFound();
+                
+                Monitor monitor = new Monitor
+                {
+                    ServiceId = serviceId,
+                    Path = monitorDto.Path,
+                    IntervalSeconds = monitorDto.IntervalSeconds,
+                    HttpMethodId = monitorDto.HttpMethodId
+                };
+
+                var entry = dbContext.Monitors.Add(monitor);
+                await dbContext.SaveChangesAsync(token);
+
+                string uri = $"/services/{serviceId}/monitors/{entry.Entity.MonitorId}";
+
+                return Results.Created(uri, null);
+            }).RequireAuthorization();
+    }
+}

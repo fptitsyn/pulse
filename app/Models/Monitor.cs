@@ -1,4 +1,6 @@
-﻿namespace app.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace app.Models;
 
 public class Monitor
 {
@@ -17,4 +19,16 @@ public class Monitor
     public virtual HttpMethod HttpMethod { get; set; } = null!;
 
     public virtual Service Service { get; set; } = null!;
+}
+
+public class MonitorDto
+{
+    [Required]
+    public required string Path { get; set; }
+    [Required]
+    [Range(1, 60 * 60 * 24)]
+    public int IntervalSeconds { get; set; }
+    [Required]
+    [Range(1, 6)]
+    public short HttpMethodId { get; set; }
 }
