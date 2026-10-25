@@ -37,4 +37,25 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         
         Assert.Equal(HttpStatusCode.NotFound, postMonitorResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task CreateMonitor_WithValidData_IsAvailableAtLocation()
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+
+        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", TestConstants.TestMonitor,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
+        var monitorLocation = monitorResponse.Headers.Location;
+
+        using var getResponse = await client.GetAsync(monitorLocation, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+    }
 }

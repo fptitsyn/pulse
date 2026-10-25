@@ -6,7 +6,9 @@ info:
 http:
   method: DELETE
   url: "{{host}}/services/{{serviceId}}/monitors/{{monitorId}}"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true
