@@ -39,7 +39,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     }
 
     [Fact]
-    public async Task CreateMonitor_WithValidData_IsAvailableAtLocation()
+    public async Task CreateMonitor_WithValidData_IsCreatedAtLocation()
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
@@ -57,5 +57,14 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
 
         using var getResponse = await client.GetAsync(monitorLocation, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        var path = json.RootElement.GetProperty("path").GetString();
+        var intervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
+        var httpMethodId = json.RootElement.GetProperty("httpMethodId").GetInt16();
+        
+        Assert.Equal(TestConstants.TestMonitor.Path, path);
+        Assert.Equal(TestConstants.TestMonitor.IntervalSeconds, intervalSeconds);
+        Assert.Equal(TestConstants.TestMonitor.HttpMethodId, httpMethodId);
     }
 }
