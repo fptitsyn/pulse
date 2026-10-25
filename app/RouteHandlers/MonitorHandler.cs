@@ -63,5 +63,41 @@ public static class MonitorHandler
 
                 return Results.Created(uri, null);
             }).RequireAuthorization();
+
+        app.MapPut(BaseUrl + "{monitorId}",
+            async ([FromBody] MonitorDto monitorDto, int serviceId, int monitorId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
+            {
+                int? userId = RouteHelper.GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
+
+                var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
+                    m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                if (monitor == null) return Results.NotFound();
+
+                monitor.Path = monitorDto.Path;
+                monitor.IntervalSeconds = monitorDto.IntervalSeconds;
+                monitor.HttpMethodId = monitorDto.HttpMethodId;
+
+                await dbContext.SaveChangesAsync(token);
+
+                return Results.NoContent();
+            }).RequireAuthorization();
+
+        app.MapDelete(BaseUrl + "{monitorId}",
+            async (int serviceId, int monitorId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
+            {
+                int? userId = RouteHelper.GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
+
+                var monitor = await dbContext.Monitors
+                    .FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
+                                              m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                if (monitor == null) return Results.NotFound();
+
+                dbContext.Monitors.Remove(monitor);
+                await dbContext.SaveChangesAsync(token);
+
+                return Results.NoContent();
+            }).RequireAuthorization();
     }
 }

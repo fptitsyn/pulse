@@ -5,12 +5,12 @@ info:
 
 http:
   method: POST
-  url: "{{host}}/services/1/monitors/"
+  url: "{{host}}/services/{{serviceId}}/monitors/"
   body:
     type: json
     data: |-
       {
-        "path": "/test",
+        "path": "/create",
         "intervalSeconds": 10,
         "httpMethodId": 1
       }
