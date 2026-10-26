@@ -1,0 +1,26 @@
+info:
+  name: PostMonitor
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{host}}/services/{{serviceId}}/monitors/"
+  body:
+    type: json
+    data: |-
+      {
+        "path": "/create",
+        "intervalSeconds": 10,
+        "httpMethodId": 1
+      }
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

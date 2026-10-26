@@ -1,7 +1,5 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using app.Models;
 using Microsoft.AspNetCore.Identity;
@@ -10,24 +8,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Pulse.IntegrationTests.Fixtures;
 using Pulse.IntegrationTests.Helpers;
 
-namespace Pulse.IntegrationTests.Services;
+namespace Pulse.IntegrationTests.Endpoints;
 
 public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
-    private readonly ITestOutputHelper _output;
-    
-    private const string TestPassword = "TestPassword123!";
-    private readonly ServiceDto _testService = new()
-    {
-        Name = "testName",
-        BaseUrl = "http://test.com"
-    };
 
-    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory, ITestOutputHelper output)
+    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
         _factory = factory;
-        _output = output;
     }
 
     // Auth
@@ -61,13 +50,13 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
             Email = testEmail
         };
         
-        var result = await userManager.CreateAsync(user, TestPassword);
+        var result = await userManager.CreateAsync(user, TestConstants.TestPassword);
         Assert.True(result.Succeeded);
         
         var loginRequest = new
         {
             email = testEmail,
-            password = TestPassword
+            password = TestConstants.TestPassword
         };
         
         // Act
@@ -92,10 +81,10 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     {
         // Arrange
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestConstants.TestPassword);
         
         // Act
-        using var response = await client.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var response = await client.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
 
         var location = response.Headers.Location;
         
@@ -114,7 +103,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     {
         // Arrange
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestConstants.TestPassword);
         
         ServiceDto serviceDto = new ServiceDto
         {
@@ -137,8 +126,8 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
 
         using var getResponseInitial = await clientA.GetAsync("/services", TestContext.Current.CancellationToken);
         getResponseInitial.EnsureSuccessStatusCode();
@@ -146,13 +135,13 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         int initialCount = initialJson.RootElement.GetArrayLength();
         Assert.Equal(0, initialCount);
         
-        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
         
-        using var responseA2 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseA2 = await clientA.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseA2.EnsureSuccessStatusCode();
         
-        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseB1.EnsureSuccessStatusCode();
         
         // Act
@@ -171,13 +160,13 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
         
-        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
         
-        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseB1.EnsureSuccessStatusCode();
         var location = responseB1.Headers.Location;
         
@@ -195,13 +184,13 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
         
-        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
         
-        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseB1.EnsureSuccessStatusCode();
         var location = responseB1.Headers.Location;
 
@@ -222,8 +211,8 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
-        Assert.Equal(_testService.Name, serviceName);
-        Assert.Equal(_testService.BaseUrl, baseUrl);
+        Assert.Equal(TestConstants.TestService.Name, serviceName);
+        Assert.Equal(TestConstants.TestService.BaseUrl, baseUrl);
     }
     
     [Fact]
@@ -233,13 +222,13 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
         
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestPassword);
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestPassword);
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
         
-        using var responseA1 = await clientA.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseA1 = await clientA.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseA1.EnsureSuccessStatusCode();
         
-        using var responseB1 = await clientB.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var responseB1 = await clientB.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         responseB1.EnsureSuccessStatusCode();
         var location = responseB1.Headers.Location;
         
@@ -262,7 +251,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     {
         // Arrange
         string testEmail = $"test{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestConstants.TestPassword);
 
         ServiceDto serviceDto = new ServiceDto
         {
@@ -302,9 +291,9 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     {
         // Arrange
         string testEmail = $"test{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestPassword);
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail, TestConstants.TestPassword);
 
-        using var postResponse = await client.PostAsJsonAsync("/services", _testService, TestContext.Current.CancellationToken);
+        using var postResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService, TestContext.Current.CancellationToken);
         postResponse.EnsureSuccessStatusCode();
         var location = postResponse.Headers.Location;
         
