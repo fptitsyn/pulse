@@ -92,8 +92,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
 
         using var getUpdatedMonitor = await client.GetAsync(monitorLocation, TestContext.Current.CancellationToken);
         
-        using var json =
-            await getUpdatedMonitor.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        using var json = await getUpdatedMonitor.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         
         var updatedPath = json.RootElement.GetProperty("path").GetString();
         var updatedIntervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
@@ -142,6 +141,39 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         Assert.Equal(HttpStatusCode.NotFound, getBWrong.StatusCode);
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(5)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(100)]
+    public async Task GetMonitors_ForNonExistingService_ReturnsNotFound(int serviceId)
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+        
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+        
+        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", TestConstants.TestMonitor,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
+        
+        using var getAllMonitors =
+            await client.GetAsync($"{serviceLocation}/monitors", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, getAllMonitors.StatusCode);
+
+        using var json = await getAllMonitors.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        Assert.Equal(1, json.RootElement.GetArrayLength());
+
+        using var getWrongServiceMonitors = await client.GetAsync($"/services/{serviceId}/monitors/",
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, getWrongServiceMonitors.StatusCode);
+    }
+    
     private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
     {
         if (monitor == null)

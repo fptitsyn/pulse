@@ -16,6 +16,13 @@ public static class ServiceHandler
             
             var services = await dbContext.Services
                 .Where(s => s.ApplicationUserId == userId)
+                .Select(s => new
+                {
+                    s.ApplicationUserId,
+                    s.ServiceId,
+                    s.Name,
+                    s.BaseUrl
+                })
                 .ToListAsync(cancellationToken);
             
             return Results.Ok(services);
@@ -31,7 +38,15 @@ public static class ServiceHandler
                     .FirstOrDefaultAsync(s => s.ServiceId == id && s.ApplicationUserId == userId, cancellationToken);
                 if (service == null) return Results.NotFound();
 
-                return Results.Ok(service);
+                var serviceReturn = new
+                {
+                    service.ApplicationUserId,
+                    service.ServiceId,
+                    service.Name,
+                    service.BaseUrl,
+                };
+                
+                return Results.Ok(serviceReturn);
             }).RequireAuthorization();
 
         app.MapPost("/services",

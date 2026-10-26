@@ -18,8 +18,21 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
+                bool serviceExists = await dbContext.Services.AnyAsync(s => s.ServiceId == serviceId &&
+                                                                            s.ApplicationUserId == userId, token);
+                if (!serviceExists) return Results.NotFound();
+                
                 var monitors = await dbContext.Monitors
-                    .Where(m => m.Service.ApplicationUserId == userId && m.ServiceId == serviceId)
+                    .Where(m => m.ServiceId == serviceId &&
+                                m.Service.ApplicationUserId == userId)
+                    .Select(m => new
+                    {
+                        m.MonitorId,
+                        m.ServiceId,
+                        m.Path,
+                        m.IntervalSeconds,
+                        m.HttpMethodId
+                    })
                     .ToListAsync(token);
 
                 return Results.Ok(monitors);
@@ -35,7 +48,16 @@ public static class MonitorHandler
                     m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
 
-                return Results.Ok(monitor);
+                var monitorReturn = new
+                {
+                    monitor.ServiceId,
+                    monitor.MonitorId,
+                    monitor.Path,
+                    monitor.IntervalSeconds,
+                    monitor.HttpMethodId
+                };
+                
+                return Results.Ok(monitorReturn);
             }).RequireAuthorization();
 
         app.MapPost(BaseUrl,
