@@ -18,8 +18,6 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     }
 
     [Theory]
-    [InlineData(-1)]
-    [InlineData(0)]
     [InlineData(1)]
     [InlineData(5)]
     [InlineData(100)]
@@ -144,8 +142,6 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     [Theory]
     [InlineData(2)]
     [InlineData(5)]
-    [InlineData(0)]
-    [InlineData(-1)]
     [InlineData(100)]
     public async Task GetMonitors_ForNonExistingService_ReturnsNotFound(int serviceId)
     {
@@ -172,6 +168,27 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var getWrongServiceMonitors = await client.GetAsync($"/services/{serviceId}/monitors/",
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, getWrongServiceMonitors.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetMonitor_WithInvalidServiceId_ReturnsBadRequest(int serviceId)
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+        
+        using var successfulGetResponse = await client.GetAsync($"{serviceLocation}/monitors", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, successfulGetResponse.StatusCode);
+        
+        using var badGetResponse = await client.GetAsync($"services/{serviceId}/monitors/", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.BadRequest, badGetResponse.StatusCode);
     }
     
     private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)

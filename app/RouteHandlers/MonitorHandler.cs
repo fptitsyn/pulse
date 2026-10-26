@@ -18,6 +18,8 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
+                if (serviceId <= 0) return Results.BadRequest();
+                
                 bool serviceExists = await dbContext.Services.AnyAsync(s => s.ServiceId == serviceId &&
                                                                             s.ApplicationUserId == userId, token);
                 if (!serviceExists) return Results.NotFound();
@@ -44,6 +46,9 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
+                if (serviceId <= 0) return Results.BadRequest();
+                if (monitorId <= 0) return Results.BadRequest();
+                
                 var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
                     m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
@@ -66,6 +71,8 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
+                if (serviceId <= 0) return Results.BadRequest();
+                
                 var service = await dbContext.Services.FirstOrDefaultAsync(s => 
                         s.ServiceId == serviceId && s.ApplicationUserId == userId, token);
                 if (service == null) return Results.NotFound();
@@ -92,6 +99,9 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
+                if (serviceId <= 0) return Results.BadRequest();
+                if (monitorId <= 0) return Results.BadRequest();
+                
                 var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
                     m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
@@ -111,6 +121,9 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
+                if (serviceId <= 0) return Results.BadRequest();
+                if (monitorId <= 0) return Results.BadRequest();
+                
                 var monitor = await dbContext.Monitors
                     .FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
                                               m.ServiceId == serviceId && m.MonitorId == monitorId, token);
