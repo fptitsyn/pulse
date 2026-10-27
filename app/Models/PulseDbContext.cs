@@ -19,7 +19,7 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
 
     public virtual DbSet<HttpCode> HttpCodes { get; set; }
 
-    public virtual DbSet<HttpMethod> HttpMethods { get; set; }
+    public virtual DbSet<RequestHttpMethod> HttpMethods { get; set; }
 
     public virtual DbSet<Monitor> Monitors { get; set; }
 
@@ -81,8 +81,8 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
                 new HttpCode { HttpCodeId = HttpCodeIds.Code500, Code = 500 }
             );
         });
-
-        modelBuilder.Entity<HttpMethod>(entity =>
+        
+        modelBuilder.Entity<RequestHttpMethod>(entity =>
         {
             entity.HasKey(e => e.HttpMethodId).HasName("http_methods_pkey");
 
@@ -97,12 +97,12 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
                 .HasColumnName("http_method");
             
             entity.HasData(
-                new HttpMethod { HttpMethodId = HttpMethodIds.Head, Method = "HEAD" },
-                new HttpMethod { HttpMethodId = HttpMethodIds.Get, Method = "GET" },
-                new HttpMethod { HttpMethodId = HttpMethodIds.Post, Method = "POST" },
-                new HttpMethod { HttpMethodId = HttpMethodIds.Put, Method = "PUT" },
-                new HttpMethod { HttpMethodId = HttpMethodIds.Patch, Method = "PATCH" },
-                new HttpMethod { HttpMethodId = HttpMethodIds.Delete, Method = "DELETE" }
+                new RequestHttpMethod { HttpMethodId = HttpMethodIds.Head, Method = "HEAD" },
+                new RequestHttpMethod { HttpMethodId = HttpMethodIds.Get, Method = "GET" },
+                new RequestHttpMethod { HttpMethodId = HttpMethodIds.Post, Method = "POST" },
+                new RequestHttpMethod { HttpMethodId = HttpMethodIds.Put, Method = "PUT" },
+                new RequestHttpMethod { HttpMethodId = HttpMethodIds.Patch, Method = "PATCH" },
+                new RequestHttpMethod { HttpMethodId = HttpMethodIds.Delete, Method = "DELETE" }
             );
         });
 

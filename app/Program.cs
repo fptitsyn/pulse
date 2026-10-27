@@ -1,4 +1,5 @@
 using app.Models;
+using app.Monitoring;
 using app.RouteHandlers;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,10 @@ builder.Services.AddDbContext<PulseDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// builder.Services.AddHostedService()
+builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 var app = builder.Build();
 

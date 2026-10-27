@@ -1,6 +1,6 @@
 ﻿namespace app.Models;
 
-public class HttpMethod
+public class RequestHttpMethod
 {
     public short HttpMethodId { get; set; }
 

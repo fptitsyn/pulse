@@ -341,7 +341,49 @@ namespace app.Migrations
                         });
                 });
 
-            modelBuilder.Entity("app.Models.HttpMethod", b =>
+            modelBuilder.Entity("app.Models.Monitor", b =>
+                {
+                    b.Property<int>("MonitorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("monitor_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MonitorId"));
+
+                    b.Property<short>("HttpMethodId")
+                        .HasColumnType("smallint")
+                        .HasColumnName("http_method_id");
+
+                    b.Property<int>("IntervalSeconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("interval_seconds");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("NextCheckAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("character varying")
+                        .HasColumnName("path");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer")
+                        .HasColumnName("service_id");
+
+                    b.HasKey("MonitorId")
+                        .HasName("monitors_pkey");
+
+                    b.HasIndex("HttpMethodId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.ToTable("monitors", (string)null);
+                });
+
+            modelBuilder.Entity("app.Models.RequestHttpMethod", b =>
                 {
                     b.Property<short>("HttpMethodId")
                         .ValueGeneratedOnAdd()
@@ -395,48 +437,6 @@ namespace app.Migrations
                             HttpMethodId = (short)6,
                             Method = "DELETE"
                         });
-                });
-
-            modelBuilder.Entity("app.Models.Monitor", b =>
-                {
-                    b.Property<int>("MonitorId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("monitor_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MonitorId"));
-
-                    b.Property<short>("HttpMethodId")
-                        .HasColumnType("smallint")
-                        .HasColumnName("http_method_id");
-
-                    b.Property<int>("IntervalSeconds")
-                        .HasColumnType("integer")
-                        .HasColumnName("interval_seconds");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("NextCheckedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasColumnType("character varying")
-                        .HasColumnName("path");
-
-                    b.Property<int>("ServiceId")
-                        .HasColumnType("integer")
-                        .HasColumnName("service_id");
-
-                    b.HasKey("MonitorId")
-                        .HasName("monitors_pkey");
-
-                    b.HasIndex("HttpMethodId");
-
-                    b.HasIndex("ServiceId");
-
-                    b.ToTable("monitors", (string)null);
                 });
 
             modelBuilder.Entity("app.Models.Service", b =>
@@ -589,7 +589,7 @@ namespace app.Migrations
 
             modelBuilder.Entity("app.Models.Monitor", b =>
                 {
-                    b.HasOne("app.Models.HttpMethod", "HttpMethod")
+                    b.HasOne("app.Models.RequestHttpMethod", "HttpMethod")
                         .WithMany("Monitors")
                         .HasForeignKey("HttpMethodId")
                         .IsRequired()
@@ -635,14 +635,14 @@ namespace app.Migrations
                     b.Navigation("CheckResults");
                 });
 
-            modelBuilder.Entity("app.Models.HttpMethod", b =>
-                {
-                    b.Navigation("Monitors");
-                });
-
             modelBuilder.Entity("app.Models.Monitor", b =>
                 {
                     b.Navigation("CheckResults");
+                });
+
+            modelBuilder.Entity("app.Models.RequestHttpMethod", b =>
+                {
+                    b.Navigation("Monitors");
                 });
 
             modelBuilder.Entity("app.Models.Service", b =>

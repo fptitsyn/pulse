@@ -16,11 +16,11 @@ public class Monitor
 
     public bool IsEnabled { get; set; } = true;
     
-    public DateTime NextCheckedAt { get; set; }
+    public DateTime NextCheckAt { get; set; }
 
     public virtual ICollection<CheckResult> CheckResults { get; set; } = new List<CheckResult>();
 
-    public virtual HttpMethod HttpMethod { get; set; } = null!;
+    public virtual RequestHttpMethod HttpMethod { get; set; } = null!;
 
     public virtual Service Service { get; set; } = null!;
 }
