@@ -14,6 +14,10 @@ public class Monitor
 
     public short HttpMethodId { get; set; }
 
+    public bool IsEnabled { get; set; } = true;
+    
+    public DateTime NextCheckedAt { get; set; }
+
     public virtual ICollection<CheckResult> CheckResults { get; set; } = new List<CheckResult>();
 
     public virtual HttpMethod HttpMethod { get; set; } = null!;

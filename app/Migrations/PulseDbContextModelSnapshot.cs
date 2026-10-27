@@ -414,6 +414,12 @@ namespace app.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("interval_seconds");
 
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("NextCheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("character varying")
