@@ -12,7 +12,7 @@ http:
       {
         "path": "/create",
         "intervalSeconds": 10,
-        "httpMethodId": 1
+        "httpMethod": "GET"
       }
   auth:
     type: bearer
