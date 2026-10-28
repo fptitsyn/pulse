@@ -5,10 +5,10 @@ namespace app.Monitoring;
 
 public class HttpMonitorChecker
 {
-    private const string Success = "SUCCESS";
-    private const string HttpError = "HTTP_ERROR";
-    private const string RequestTimeOut = "TIMEOUT";
-    private const string NetworkError = "NETWORK_ERROR";
+    public const string Success = "SUCCESS";
+    public const string HttpError = "HTTP_ERROR";
+    public const string RequestTimeOut = "TIMEOUT";
+    public const string NetworkError = "NETWORK_ERROR";
     
     private readonly HttpClient _client;
     private readonly ILogger<HttpMonitorChecker> _logger;
