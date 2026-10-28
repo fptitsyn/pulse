@@ -12,15 +12,13 @@ public class Monitor
 
     public int IntervalSeconds { get; set; }
 
-    public short HttpMethodId { get; set; }
+    public HttpMethod HttpMethod { get; set; } = null!;
 
     public bool IsEnabled { get; set; } = true;
     
     public DateTime NextCheckAt { get; set; }
 
     public virtual ICollection<CheckResult> CheckResults { get; set; } = new List<CheckResult>();
-
-    public virtual RequestHttpMethod HttpMethod { get; set; } = null!;
 
     public virtual Service Service { get; set; } = null!;
 }
@@ -32,6 +30,6 @@ public class MonitorDto
     [Required]
     [Range(1, 60 * 60 * 24)]
     public int IntervalSeconds { get; set; }
-    [Range(1, 6)]
-    public short HttpMethodId { get; set; }
+    [Required]
+    public HttpMethod HttpMethod { get; set; }
 }

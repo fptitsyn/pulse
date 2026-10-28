@@ -238,9 +238,9 @@ namespace app.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("duration_ms");
 
-                    b.Property<short?>("HttpCodeId")
-                        .HasColumnType("smallint")
-                        .HasColumnName("http_code_id");
+                    b.Property<int?>("HttpStatusCode")
+                        .HasColumnType("integer")
+                        .HasColumnName("http_status_code");
 
                     b.Property<int>("MonitorId")
                         .HasColumnType("integer")
@@ -255,90 +255,9 @@ namespace app.Migrations
                     b.HasKey("CheckResultId")
                         .HasName("check_results_pkey");
 
-                    b.HasIndex("HttpCodeId");
-
                     b.HasIndex("MonitorId");
 
                     b.ToTable("check_results", (string)null);
-                });
-
-            modelBuilder.Entity("app.Models.HttpCode", b =>
-                {
-                    b.Property<short>("HttpCodeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("smallint")
-                        .HasColumnName("http_code_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("HttpCodeId"));
-
-                    b.Property<short>("Code")
-                        .HasColumnType("smallint")
-                        .HasColumnName("http_code");
-
-                    b.HasKey("HttpCodeId")
-                        .HasName("http_codes_pkey");
-
-                    b.HasIndex(new[] { "Code" }, "http_codes_http_code_key")
-                        .IsUnique();
-
-                    b.ToTable("http_codes", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            HttpCodeId = (short)1,
-                            Code = (short)200
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)2,
-                            Code = (short)201
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)3,
-                            Code = (short)204
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)4,
-                            Code = (short)301
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)5,
-                            Code = (short)302
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)6,
-                            Code = (short)304
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)7,
-                            Code = (short)400
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)8,
-                            Code = (short)401
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)9,
-                            Code = (short)403
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)10,
-                            Code = (short)404
-                        },
-                        new
-                        {
-                            HttpCodeId = (short)11,
-                            Code = (short)500
-                        });
                 });
 
             modelBuilder.Entity("app.Models.Monitor", b =>
@@ -350,9 +269,10 @@ namespace app.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MonitorId"));
 
-                    b.Property<short>("HttpMethodId")
-                        .HasColumnType("smallint")
-                        .HasColumnName("http_method_id");
+                    b.Property<string>("HttpMethod")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("http_method");
 
                     b.Property<int>("IntervalSeconds")
                         .HasColumnType("integer")
@@ -376,67 +296,9 @@ namespace app.Migrations
                     b.HasKey("MonitorId")
                         .HasName("monitors_pkey");
 
-                    b.HasIndex("HttpMethodId");
-
                     b.HasIndex("ServiceId");
 
                     b.ToTable("monitors", (string)null);
-                });
-
-            modelBuilder.Entity("app.Models.RequestHttpMethod", b =>
-                {
-                    b.Property<short>("HttpMethodId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("smallint")
-                        .HasColumnName("http_method_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("HttpMethodId"));
-
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying")
-                        .HasColumnName("http_method");
-
-                    b.HasKey("HttpMethodId")
-                        .HasName("http_methods_pkey");
-
-                    b.HasIndex(new[] { "Method" }, "http_methods_http_method_key")
-                        .IsUnique();
-
-                    b.ToTable("http_methods", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            HttpMethodId = (short)1,
-                            Method = "HEAD"
-                        },
-                        new
-                        {
-                            HttpMethodId = (short)2,
-                            Method = "GET"
-                        },
-                        new
-                        {
-                            HttpMethodId = (short)3,
-                            Method = "POST"
-                        },
-                        new
-                        {
-                            HttpMethodId = (short)4,
-                            Method = "PUT"
-                        },
-                        new
-                        {
-                            HttpMethodId = (short)5,
-                            Method = "PATCH"
-                        },
-                        new
-                        {
-                            HttpMethodId = (short)6,
-                            Method = "DELETE"
-                        });
                 });
 
             modelBuilder.Entity("app.Models.Service", b =>
@@ -463,59 +325,17 @@ namespace app.Migrations
                         .HasColumnType("character varying")
                         .HasColumnName("name");
 
-                    b.Property<short>("ServiceStatusId")
-                        .HasColumnType("smallint")
-                        .HasColumnName("service_status_id");
+                    b.Property<string>("ServiceStatus")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("service_status");
 
                     b.HasKey("ServiceId")
                         .HasName("services_pkey");
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.HasIndex("ServiceStatusId");
-
                     b.ToTable("services", (string)null);
-                });
-
-            modelBuilder.Entity("app.Models.ServiceStatus", b =>
-                {
-                    b.Property<short>("ServiceStatusId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("smallint")
-                        .HasColumnName("service_status_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<short>("ServiceStatusId"));
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying")
-                        .HasColumnName("service_status");
-
-                    b.HasKey("ServiceStatusId")
-                        .HasName("service_statuses_pkey");
-
-                    b.HasIndex(new[] { "Status" }, "service_statuses_service_status_key")
-                        .IsUnique();
-
-                    b.ToTable("service_statuses", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            ServiceStatusId = (short)1,
-                            Status = "UNKNOWN"
-                        },
-                        new
-                        {
-                            ServiceStatusId = (short)2,
-                            Status = "UP"
-                        },
-                        new
-                        {
-                            ServiceStatusId = (short)3,
-                            Status = "DOWN"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -571,37 +391,22 @@ namespace app.Migrations
 
             modelBuilder.Entity("app.Models.CheckResult", b =>
                 {
-                    b.HasOne("app.Models.HttpCode", "HttpCode")
-                        .WithMany("CheckResults")
-                        .HasForeignKey("HttpCodeId")
-                        .HasConstraintName("check_results_http_code_id_fkey");
-
                     b.HasOne("app.Models.Monitor", "Monitor")
                         .WithMany("CheckResults")
                         .HasForeignKey("MonitorId")
                         .IsRequired()
                         .HasConstraintName("check_results_monitor_id_fkey");
 
-                    b.Navigation("HttpCode");
-
                     b.Navigation("Monitor");
                 });
 
             modelBuilder.Entity("app.Models.Monitor", b =>
                 {
-                    b.HasOne("app.Models.RequestHttpMethod", "HttpMethod")
-                        .WithMany("Monitors")
-                        .HasForeignKey("HttpMethodId")
-                        .IsRequired()
-                        .HasConstraintName("monitors_http_method_id_fkey");
-
                     b.HasOne("app.Models.Service", "Service")
                         .WithMany("Monitors")
                         .HasForeignKey("ServiceId")
                         .IsRequired()
                         .HasConstraintName("monitors_service_id_fkey");
-
-                    b.Navigation("HttpMethod");
 
                     b.Navigation("Service");
                 });
@@ -614,14 +419,6 @@ namespace app.Migrations
                         .IsRequired()
                         .HasConstraintName("services_user_id_fkey");
 
-                    b.HasOne("app.Models.ServiceStatus", "ServiceStatus")
-                        .WithMany("Services")
-                        .HasForeignKey("ServiceStatusId")
-                        .IsRequired()
-                        .HasConstraintName("services_service_status_id_fkey");
-
-                    b.Navigation("ServiceStatus");
-
                     b.Navigation("User");
                 });
 
@@ -630,29 +427,14 @@ namespace app.Migrations
                     b.Navigation("Services");
                 });
 
-            modelBuilder.Entity("app.Models.HttpCode", b =>
-                {
-                    b.Navigation("CheckResults");
-                });
-
             modelBuilder.Entity("app.Models.Monitor", b =>
                 {
                     b.Navigation("CheckResults");
                 });
 
-            modelBuilder.Entity("app.Models.RequestHttpMethod", b =>
-                {
-                    b.Navigation("Monitors");
-                });
-
             modelBuilder.Entity("app.Models.Service", b =>
                 {
                     b.Navigation("Monitors");
-                });
-
-            modelBuilder.Entity("app.Models.ServiceStatus", b =>
-                {
-                    b.Navigation("Services");
                 });
 #pragma warning restore 612, 618
         }

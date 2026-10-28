@@ -33,7 +33,7 @@ public static class MonitorHandler
                         m.ServiceId,
                         m.Path,
                         m.IntervalSeconds,
-                        m.HttpMethodId
+                        m.HttpMethod
                     })
                     .ToListAsync(token);
 
@@ -46,11 +46,10 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
-                if (serviceId <= 0) return Results.BadRequest();
-                if (monitorId <= 0) return Results.BadRequest();
-                
+                if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
+
                 var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
-                    m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                                                                                m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
 
                 var monitorReturn = new
@@ -59,7 +58,7 @@ public static class MonitorHandler
                     monitor.MonitorId,
                     monitor.Path,
                     monitor.IntervalSeconds,
-                    monitor.HttpMethodId
+                    monitor.HttpMethod
                 };
                 
                 return Results.Ok(monitorReturn);
@@ -82,7 +81,7 @@ public static class MonitorHandler
                     ServiceId = serviceId,
                     Path = monitorDto.Path,
                     IntervalSeconds = monitorDto.IntervalSeconds,
-                    HttpMethodId = monitorDto.HttpMethodId
+                    HttpMethod = monitorDto.HttpMethod
                 };
 
                 var entry = dbContext.Monitors.Add(monitor);
@@ -99,16 +98,15 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
-                if (serviceId <= 0) return Results.BadRequest();
-                if (monitorId <= 0) return Results.BadRequest();
-                
+                if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
+
                 var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
-                    m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                                                                                m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
 
                 monitor.Path = monitorDto.Path;
                 monitor.IntervalSeconds = monitorDto.IntervalSeconds;
-                monitor.HttpMethodId = monitorDto.HttpMethodId;
+                monitor.HttpMethod = monitorDto.HttpMethod;
 
                 await dbContext.SaveChangesAsync(token);
 
@@ -121,9 +119,8 @@ public static class MonitorHandler
                 int? userId = RouteHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
-                if (serviceId <= 0) return Results.BadRequest();
-                if (monitorId <= 0) return Results.BadRequest();
-                
+                if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
+
                 var monitor = await dbContext.Monitors
                     .FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
                                               m.ServiceId == serviceId && m.MonitorId == monitorId, token);

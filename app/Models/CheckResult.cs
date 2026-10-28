@@ -1,6 +1,8 @@
-﻿namespace app.Models;
+﻿using System.Net;
 
-public partial class CheckResult
+namespace app.Models;
+
+public class CheckResult
 {
     public int CheckResultId { get; set; }
 
@@ -8,13 +10,11 @@ public partial class CheckResult
 
     public DateTime CheckedAt { get; set; }
 
-    public short? HttpCodeId { get; set; }
+    public HttpStatusCode? HttpStatusCode { get; set; }
 
     public string Outcome { get; set; } = null!;
 
     public int DurationMs { get; set; }
-
-    public virtual HttpCode? HttpCode { get; set; }
 
     public virtual Monitor Monitor { get; set; } = null!;
 }

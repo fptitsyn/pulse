@@ -12,11 +12,9 @@ public class Service
 
     public string Name { get; set; } = null!;
     
-    public short ServiceStatusId { get; set; }
-
     public virtual ICollection<Monitor> Monitors { get; set; } = new List<Monitor>();
 
-    public virtual ServiceStatus ServiceStatus { get; set; } = null!;
+    public virtual ServiceStatus ServiceStatus { get; set; } = ServiceStatus.Unknown;
 
     public virtual ApplicationUser User { get; set; } = null!;
 }
@@ -30,4 +28,11 @@ public class ServiceDto
     [Required]
     [StringLength(30)]
     public required string Name { get; set; }
+}
+
+public enum ServiceStatus
+{
+    Unknown = -1,
+    Up = 1,
+    Down = 0
 }

@@ -62,7 +62,7 @@ public static class ServiceHandler
                     ApplicationUserId = (int)userId,
                     Name = serviceDto.Name,
                     BaseUrl = serviceDto.BaseUrl,
-                    ServiceStatusId = ServiceStatusIds.Unknown
+                    ServiceStatus = ServiceStatus.Unknown
                 };
 
                 var entry = dbContext.Services.Add(service);

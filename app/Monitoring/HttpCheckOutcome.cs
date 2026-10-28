@@ -1,5 +1,4 @@
 using System.Net;
-using app.Models;
 
 namespace app.Monitoring;
 
