@@ -31,5 +31,5 @@ public class MonitorDto
     [Range(1, 60 * 60 * 24)]
     public int IntervalSeconds { get; set; }
     [Required]
-    public HttpMethod HttpMethod { get; set; }
+    public string HttpMethod { get; set; }
 }
