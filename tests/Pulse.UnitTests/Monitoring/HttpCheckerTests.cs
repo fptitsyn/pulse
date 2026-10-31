@@ -55,6 +55,26 @@ public class HttpCheckerTests
         Assert.Equal(HttpStatusCode.NotFound, checkOutcome.HttpStatusCode);
         Assert.Equal(HttpMonitorChecker.HttpError, checkOutcome.Outcome);
     }
+
+    [Fact]
+    public async Task SendRequest_ForTooLong_OutcomeTimeout()
+    {
+        using var client = new HttpClient(new TimeoutHttpHandler());
+        var checkOutcome = await CreateCheckOutcome(client);
+        
+        Assert.Null(checkOutcome.HttpStatusCode);
+        Assert.Equal(HttpMonitorChecker.RequestTimeOut, checkOutcome.Outcome);
+    }
+    
+    [Fact]
+    public async Task SendRequest_RequestError_OutcomeNetworkError()
+    {
+        using var client = new HttpClient(new NetworkFailureHttpHandler());
+        var checkOutcome = await CreateCheckOutcome(client);
+        
+        Assert.Null(checkOutcome.HttpStatusCode);
+        Assert.Equal(HttpMonitorChecker.NetworkError, checkOutcome.Outcome);
+    }
     
     private async Task<HttpCheckOutcome> CreateCheckOutcome(HttpClient client, string uriS = "http://example.com")
     {
@@ -63,55 +83,5 @@ public class HttpCheckerTests
         Uri uri = new Uri(uriS);
         HttpCheckOutcome checkOutcome = await checker.SendRequestAsync(uri, method, TestContext.Current.CancellationToken);
         return checkOutcome;
-    }
-}
-
-public sealed class SuccessHttpHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.OK);
-
-        return Task.FromResult(response);
-    }
-}
-
-public sealed class WaitingHttpHandler : HttpMessageHandler
-{
-    protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        await Task.Delay(
-            Timeout.InfiniteTimeSpan,
-            cancellationToken);
-
-        return new HttpResponseMessage(HttpStatusCode.OK);
-    }
-}
-
-public sealed class ServiceUnavailableHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-
-        return Task.FromResult(response);
-    }
-}
-
-public sealed class NotFoundHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.NotFound);
-
-        return Task.FromResult(response);
     }
 }
