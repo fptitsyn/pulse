@@ -33,7 +33,7 @@ public static class MonitorHandler
                         m.ServiceId,
                         m.Path,
                         m.IntervalSeconds,
-                        m.HttpMethod.Method
+                        HttpMethod = m.HttpMethod.Method
                     })
                     .ToListAsync(token);
 
@@ -58,7 +58,7 @@ public static class MonitorHandler
                     monitor.MonitorId,
                     monitor.Path,
                     monitor.IntervalSeconds,
-                    monitor.HttpMethod.Method
+                    HttpMethod = monitor.HttpMethod.Method
                 };
                 
                 return Results.Ok(monitorReturn);

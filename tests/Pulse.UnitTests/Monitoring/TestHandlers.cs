@@ -4,10 +4,15 @@ namespace Pulse.UnitTests.Monitoring;
 
 public sealed class SuccessHttpHandler : HttpMessageHandler
 {
+    public Uri? ReceivedUri { get; private set; }
+    public HttpMethod? ReceivedMethod { get; private set; }
+    
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
+        ReceivedUri = request.RequestUri;
+        ReceivedMethod = request.Method;
         var response = new HttpResponseMessage(HttpStatusCode.OK);
 
         return Task.FromResult(response);
@@ -52,7 +57,7 @@ public sealed class NotFoundHandler : HttpMessageHandler
 
 public sealed class TimeoutHttpHandler : HttpMessageHandler
 {
-    protected override async Task<HttpResponseMessage> SendAsync(
+    protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
@@ -62,7 +67,7 @@ public sealed class TimeoutHttpHandler : HttpMessageHandler
 
 public sealed class NetworkFailureHttpHandler : HttpMessageHandler
 {
-    protected override async Task<HttpResponseMessage> SendAsync(
+    protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {

@@ -24,38 +24,14 @@ public class Monitor
     public virtual Service Service { get; set; } = null!;
 }
 
-public class MonitorDto : IValidatableObject
+public class MonitorDto
 {
     [Required]
     public required string Path { get; set; }
     [Required]
     [Range(1, 60 * 60 * 24)]
     public int IntervalSeconds { get; set; }
+    // Slashes will be trimmed with TrimStart()
     [Required]
     public string HttpMethod { get; set; }
-
-    private readonly Dictionary<string, HttpMethod> _allowedMethods =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["GET"] = System.Net.Http.HttpMethod.Get,
-            ["POST"] = System.Net.Http.HttpMethod.Post,
-            ["PUT"] = System.Net.Http.HttpMethod.Put,
-            ["DELETE"] = System.Net.Http.HttpMethod.Delete,
-            ["PATCH"] = System.Net.Http.HttpMethod.Patch,
-            ["HEAD"] = System.Net.Http.HttpMethod.Head
-        };
-    
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        string pattern = "([A-Za-z0-9-_])";
-        if (!Regex.IsMatch(Path, pattern))
-        {
-            yield return new ValidationResult("Path can only contain letters, digits, underscores and hyphens");
-        }
-
-        if (!_allowedMethods.TryGetValue(HttpMethod, out _))
-        {
-            yield return new ValidationResult("Unsupported HTTP method");
-        }
-    }
 }

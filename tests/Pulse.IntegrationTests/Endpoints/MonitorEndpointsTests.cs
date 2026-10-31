@@ -52,7 +52,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         var path = json.RootElement.GetProperty("path").GetString();
         var intervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
-        var httpMethod = json.RootElement.GetProperty("method").GetString();
+        var httpMethod = json.RootElement.GetProperty("httpMethod").GetString();
         
         Assert.Equal(TestConstants.TestMonitor.Path, path);
         Assert.Equal(TestConstants.TestMonitor.IntervalSeconds, intervalSeconds);
@@ -94,7 +94,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         
         var updatedPath = json.RootElement.GetProperty("path").GetString();
         var updatedIntervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
-        var updatedHttpMethod = json.RootElement.GetProperty("method").GetString();
+        var updatedHttpMethod = json.RootElement.GetProperty("httpMethod").GetString();
         
         Assert.Equal(path, updatedPath);
         Assert.Equal(intervalSeconds, updatedIntervalSeconds);

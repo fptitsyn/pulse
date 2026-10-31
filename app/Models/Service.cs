@@ -32,10 +32,12 @@ public class ServiceDto : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        string pattern = "([A-Za-z0-9-_])";
-        if (!Regex.IsMatch(BaseUrl, pattern))
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            yield return new ValidationResult("URL can only contain letters, digits, underscores and hyphens");
+            yield return new ValidationResult(
+                "BaseUrl must be an absolute HTTP or HTTPS URL",
+                [nameof(BaseUrl)]);
         }
     }
 }
