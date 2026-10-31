@@ -1,5 +1,6 @@
 using System.Net;
 using app.Monitoring;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Pulse.UnitTests.Monitoring;
@@ -11,11 +12,7 @@ public class HttpCheckerTests
     {
         using var client = new HttpClient(new SuccessHttpHandler());
 
-        var checker = new HttpMonitorChecker(client, NullLogger<HttpMonitorChecker>.Instance);
-        Uri uri = new Uri("http://example.com");
-        HttpMethod method = HttpMethod.Head;
-        
-        HttpCheckOutcome checkOutcome = await checker.SendRequestAsync(uri, method, TestContext.Current.CancellationToken);
+        HttpCheckOutcome checkOutcome = await CreateCheckOutcome(client);
         
         Assert.Equal(HttpStatusCode.OK, checkOutcome.HttpStatusCode);
         Assert.Equal(HttpMonitorChecker.Success, checkOutcome.Outcome);
@@ -43,14 +40,29 @@ public class HttpCheckerTests
     {
         using var client = new HttpClient(new ServiceUnavailableHandler());
 
-        var checker = new HttpMonitorChecker(client, NullLogger<HttpMonitorChecker>.Instance);
-        Uri uri = new Uri("http://example.com");
-        HttpMethod method = HttpMethod.Head;
-        
-        HttpCheckOutcome checkOutcome = await checker.SendRequestAsync(uri, method, TestContext.Current.CancellationToken);
+        HttpCheckOutcome checkOutcome = await CreateCheckOutcome(client);
         
         Assert.Equal(HttpStatusCode.ServiceUnavailable, checkOutcome.HttpStatusCode);
         Assert.Equal(HttpMonitorChecker.HttpError, checkOutcome.Outcome);
+    }
+
+    [Fact]
+    public async Task SendRequest_WithMissingEndpoint_ReturnsNotFound()
+    {
+        using var client = new HttpClient(new NotFoundHandler());
+        var checkOutcome = await CreateCheckOutcome(client, "http://example.x");
+        
+        Assert.Equal(HttpStatusCode.NotFound, checkOutcome.HttpStatusCode);
+        Assert.Equal(HttpMonitorChecker.HttpError, checkOutcome.Outcome);
+    }
+    
+    private async Task<HttpCheckOutcome> CreateCheckOutcome(HttpClient client, string uriS = "http://example.com")
+    {
+        var checker = new HttpMonitorChecker(client, NullLogger<HttpMonitorChecker>.Instance);
+        HttpMethod method = HttpMethod.Head;
+        Uri uri = new Uri(uriS);
+        HttpCheckOutcome checkOutcome = await checker.SendRequestAsync(uri, method, TestContext.Current.CancellationToken);
+        return checkOutcome;
     }
 }
 
@@ -87,6 +99,18 @@ public sealed class ServiceUnavailableHandler : HttpMessageHandler
         CancellationToken cancellationToken)
     {
         var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+
+        return Task.FromResult(response);
+    }
+}
+
+public sealed class NotFoundHandler : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.NotFound);
 
         return Task.FromResult(response);
     }
