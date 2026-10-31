@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/tests/">
     <Project Path="tests/Pulse.IntegrationTests/Pulse.IntegrationTests.csproj" />
+    <Project Path="tests/Pulse.UnitTests/Pulse.UnitTests.csproj" />
   </Folder>
   <Project Path="app/app.csproj" />
 </Solution>

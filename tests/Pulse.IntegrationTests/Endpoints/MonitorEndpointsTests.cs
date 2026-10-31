@@ -18,8 +18,6 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     }
 
     [Theory]
-    [InlineData(-1)]
-    [InlineData(0)]
     [InlineData(1)]
     [InlineData(5)]
     [InlineData(100)]
@@ -54,20 +52,20 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         var path = json.RootElement.GetProperty("path").GetString();
         var intervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
-        var httpMethodId = json.RootElement.GetProperty("httpMethodId").GetInt16();
+        var httpMethod = json.RootElement.GetProperty("method").GetString();
         
         Assert.Equal(TestConstants.TestMonitor.Path, path);
         Assert.Equal(TestConstants.TestMonitor.IntervalSeconds, intervalSeconds);
-        Assert.Equal(TestConstants.TestMonitor.HttpMethodId, httpMethodId);
+        Assert.Equal(TestConstants.TestMonitor.HttpMethod, httpMethod);
     }
 
     [Theory]
-    [InlineData("testPath", 3, 1)]
-    [InlineData("updatedPath", 5, 2)]
-    [InlineData("testPath", 5, 1)]
-    [InlineData("testPath", 3, 2)]
-    [InlineData("updatedPath", 3, 1)]
-    public async Task UpdateMonitor_WithValidData_IsSuccessful(string path, int intervalSeconds, short httpMethodId)
+    [InlineData("testPath", 3, "HEAD")]
+    [InlineData("updatedPath", 5, "GET")]
+    [InlineData("testPath", 5, "HEAD")]
+    [InlineData("testPath", 3, "GET")]
+    [InlineData("updatedPath", 3, "HEAD")]
+    public async Task UpdateMonitor_WithValidData_IsSuccessful(string path, int intervalSeconds, string httpMethod)
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
@@ -77,14 +75,14 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         {
             Path = "testPath",
             IntervalSeconds = 3,
-            HttpMethodId = 1
+            HttpMethod = "HEAD"
         };
 
         var monitorLocation = await CreateMonitor(client, initialMonitor);
 
         initialMonitor.Path = path;
         initialMonitor.IntervalSeconds = intervalSeconds;
-        initialMonitor.HttpMethodId = httpMethodId;
+        initialMonitor.HttpMethod = httpMethod;
 
         using var updateMonitorResponse =
             await client.PutAsJsonAsync(monitorLocation, initialMonitor, TestContext.Current.CancellationToken);
@@ -96,11 +94,11 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         
         var updatedPath = json.RootElement.GetProperty("path").GetString();
         var updatedIntervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
-        var updatedHttpMethodId = json.RootElement.GetProperty("httpMethodId").GetInt16();
+        var updatedHttpMethod = json.RootElement.GetProperty("method").GetString();
         
         Assert.Equal(path, updatedPath);
         Assert.Equal(intervalSeconds, updatedIntervalSeconds);
-        Assert.Equal(httpMethodId, updatedHttpMethodId);
+        Assert.Equal(httpMethod, updatedHttpMethod);
     }
 
     [Fact]
@@ -144,8 +142,6 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     [Theory]
     [InlineData(2)]
     [InlineData(5)]
-    [InlineData(0)]
-    [InlineData(-1)]
     [InlineData(100)]
     public async Task GetMonitors_ForNonExistingService_ReturnsNotFound(int serviceId)
     {
@@ -172,6 +168,27 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var getWrongServiceMonitors = await client.GetAsync($"/services/{serviceId}/monitors/",
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, getWrongServiceMonitors.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetMonitor_WithInvalidServiceId_ReturnsBadRequest(int serviceId)
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+        
+        using var successfulGetResponse = await client.GetAsync($"{serviceLocation}/monitors", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, successfulGetResponse.StatusCode);
+        
+        using var badGetResponse = await client.GetAsync($"services/{serviceId}/monitors/", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.BadRequest, badGetResponse.StatusCode);
     }
     
     private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)

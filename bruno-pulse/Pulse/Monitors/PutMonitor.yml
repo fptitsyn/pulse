@@ -12,7 +12,7 @@ http:
       {
         "path": "/updatedPath",
         "intervalSeconds": 5,
-        "httpMethodId": 2
+        "httpMethod": "POST"
       }
   auth:
     type: bearer
