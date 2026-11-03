@@ -23,6 +23,8 @@ builder.Services.AddDbContext<PulseDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHostedService<MonitorWorker>();
+
 builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(10);
