@@ -2,28 +2,17 @@ using app.Models;
 
 namespace app.Monitoring;
 
-public class CheckResultWriter
+public class CheckResultWriter(PulseDbContext dbContext)
 {
-    private readonly PulseDbContext _dbContext;
-
-    public CheckResultWriter(PulseDbContext dbContext)
+    public void AddCheckResult(int monitorId, HttpCheckOutcome checkOutcome)
     {
-        _dbContext = dbContext;
-    }
-
-    public int WriteCheckResult(int monitorId, HttpCheckOutcome checkOutcome)
-    {
-        CheckResult checkResult = new CheckResult
+        dbContext.CheckResults.Add(new CheckResult
         {
             MonitorId = monitorId,
             CheckedAt = checkOutcome.CheckedAt,
             HttpStatusCode = checkOutcome.HttpStatusCode,
             Outcome = checkOutcome.Outcome,
             DurationMs = checkOutcome.DurationMs
-        };
-
-        var entry = _dbContext.CheckResults.Add(checkResult);
-        
-        return entry.Entity.CheckResultId;
+        });
     }
 }

@@ -1,63 +1,69 @@
 using app.Models;
 using Microsoft.EntityFrameworkCore;
-using Monitor = app.Models.Monitor;
 
 namespace app.Monitoring;
 
-public class MonitorWorker(PulseDbContext dbContext, ILogger<MonitorWorker> logger, HttpMonitorChecker httpChecker,
-    CheckResultWriter resultWriter)
-    : BackgroundService
+public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWorker> logger) : BackgroundService
 {
-    private ILogger<MonitorWorker> _logger = logger;
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("MonitorWorker started");
+        
         while (!stoppingToken.IsCancellationRequested)
         {
-            var dueMonitors = await dbContext.Monitors.Select(m => new
-                {
-                    m.MonitorId,
-                    m.ServiceId,
-                    m.IsEnabled,
-                    m.Path,
-                    m.IntervalSeconds,
-                    m.NextCheckAt,
-                    HttpMethod = m.HttpMethod.Method
-                }
-            ).Where(m => m.IsEnabled && m.NextCheckAt >= DateTime.UtcNow)
-                .ToListAsync(stoppingToken);
+            try {
+                await using var scope = scopeFactory.CreateAsyncScope();
 
-            foreach (var monitor in dueMonitors)
-            {
-                Service? service = await dbContext.Services.FindAsync([monitor.ServiceId], stoppingToken);
-                if (service == null)
-                {
-                    _logger.LogDebug("Service for monitor with id {MonitorId} not found", monitor.MonitorId);
-                    continue;
-                }
+                var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
+                var httpChecker = scope.ServiceProvider.GetRequiredService<HttpMonitorChecker>();
+                var resultWriter = scope.ServiceProvider.GetRequiredService<CheckResultWriter>();
+
+                var now = DateTime.UtcNow;
+
+                var dueMonitors = await dbContext.Monitors
+                    .Include(m => m.Service)
+                    .Where(m => m.IsEnabled && m.NextCheckAt <= now)
+                    .OrderBy(m => m.NextCheckAt)
+                    .Take(50)
+                    .ToListAsync(stoppingToken);
+
+                logger.LogInformation(
+                    "Found {Count} due monitors",
+                    dueMonitors.Count);
                 
-                Uri path = new Uri(monitor.Path.TrimStart('/'), UriKind.Relative);
-                Uri baseUri = new Uri(service.BaseUrl.TrimEnd('/'));
-                Uri finalUri = new Uri(path, baseUri);
-
-                HttpMethod method = HttpMethod.Parse(monitor.HttpMethod);
-                HttpCheckOutcome checkOutcome = await httpChecker.SendRequestAsync(finalUri, method, stoppingToken);
-
-                resultWriter.WriteCheckResult(monitor.MonitorId, checkOutcome);
-
-                DateTime newCheck = DateTime.UtcNow + TimeSpan.FromSeconds(monitor.IntervalSeconds);
-                dbContext.Monitors.Add(new Monitor
+                foreach (var monitor in dueMonitors)
                 {
-                    ServiceId = monitor.ServiceId,
-                    MonitorId = monitor.MonitorId,
-                    HttpMethod = HttpMethod.Parse(monitor.HttpMethod),
-                    IntervalSeconds = monitor.IntervalSeconds,
-                    IsEnabled = true,
-                    NextCheckAt = newCheck,
-                    Path = monitor.Path
-                });
+                    Uri uri = new Uri($"{monitor.Service.BaseUrl.TrimEnd('/')}/{monitor.Path.TrimStart('/')}",
+                        UriKind.Absolute);
+                    var checkOutcome = await httpChecker.SendRequestAsync(uri, monitor.HttpMethod, stoppingToken);
 
-                await Task.Delay(10000, stoppingToken);
+                    resultWriter.AddCheckResult(monitor.MonitorId, checkOutcome);
+
+                    monitor.NextCheckAt = checkOutcome.CheckedAt.AddSeconds(monitor.IntervalSeconds);
+
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                    logger.LogDebug("Uri: {UriOriginalString}, outcome: {CheckOutcomeOutcome}",
+                        uri.OriginalString, checkOutcome.Outcome);
+                }
+            }
+            catch (OperationCanceledException)
+                when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Monitoring iteration failed");
+            }
+            
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+            }
+            catch (OperationCanceledException)
+                when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
         }
     }

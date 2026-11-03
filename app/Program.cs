@@ -24,6 +24,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddHostedService<MonitorWorker>();
+builder.Services.AddScoped<CheckResultWriter>();
 
 builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
 {
