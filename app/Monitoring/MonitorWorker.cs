@@ -58,7 +58,7 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
             
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
             }
             catch (OperationCanceledException)
                 when (stoppingToken.IsCancellationRequested)

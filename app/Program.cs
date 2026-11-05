@@ -29,6 +29,12 @@ builder.Services.AddScoped<CheckResultWriter>();
 builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(10);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AllowAutoRedirect = false,
+    UseCookies = false,
+    UseDefaultCredentials = false
 });
 
 var app = builder.Build();

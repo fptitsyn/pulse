@@ -394,6 +394,7 @@ namespace app.Migrations
                     b.HasOne("app.Models.Monitor", "Monitor")
                         .WithMany("CheckResults")
                         .HasForeignKey("MonitorId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("check_results_monitor_id_fkey");
 

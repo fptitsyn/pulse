@@ -33,7 +33,8 @@ public static class MonitorHandler
                         m.ServiceId,
                         m.Path,
                         m.IntervalSeconds,
-                        HttpMethod = m.HttpMethod.Method
+                        HttpMethod = m.HttpMethod.Method,
+                        m.IsEnabled
                     })
                     .ToListAsync(token);
 
@@ -58,7 +59,8 @@ public static class MonitorHandler
                     monitor.MonitorId,
                     monitor.Path,
                     monitor.IntervalSeconds,
-                    HttpMethod = monitor.HttpMethod.Method
+                    HttpMethod = monitor.HttpMethod.Method,
+                    monitor.IsEnabled
                 };
                 
                 return Results.Ok(monitorReturn);
@@ -81,7 +83,9 @@ public static class MonitorHandler
                     ServiceId = serviceId,
                     Path = monitorDto.Path,
                     IntervalSeconds = monitorDto.IntervalSeconds,
-                    HttpMethod = HttpMethod.Parse(monitorDto.HttpMethod)
+                    HttpMethod = HttpMethod.Parse(monitorDto.HttpMethod),
+                    NextCheckAt = DateTime.UtcNow + TimeSpan.FromSeconds(monitorDto.IntervalSeconds),
+                    IsEnabled = true
                 };
 
                 var entry = dbContext.Monitors.Add(monitor);
@@ -107,6 +111,7 @@ public static class MonitorHandler
                 monitor.Path = monitorDto.Path;
                 monitor.IntervalSeconds = monitorDto.IntervalSeconds;
                 monitor.HttpMethod = HttpMethod.Parse(monitorDto.HttpMethod);
+                monitor.IsEnabled = monitorDto.IsEnabled;
 
                 await dbContext.SaveChangesAsync(token);
 

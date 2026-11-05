@@ -33,15 +33,12 @@ public class MonitorDto : IValidatableObject
     public int IntervalSeconds { get; set; }
     [Required]
     public string HttpMethod { get; set; }
-
+    public bool IsEnabled { get; set; }
+    
     private readonly Dictionary<string, HttpMethod> _allowedMethods =
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["GET"] = System.Net.Http.HttpMethod.Get,
-            ["POST"] = System.Net.Http.HttpMethod.Post,
-            ["PUT"] = System.Net.Http.HttpMethod.Put,
-            ["DELETE"] = System.Net.Http.HttpMethod.Delete,
-            ["PATCH"] = System.Net.Http.HttpMethod.Patch,
             ["HEAD"] = System.Net.Http.HttpMethod.Head
         };
     
