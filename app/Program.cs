@@ -37,6 +37,8 @@ builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
     UseDefaultCredentials = false
 });
 
+builder.Services.AddScoped<DueMonitorProcessor>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -1,32 +1,34 @@
-using app.Models;
-
 namespace app.Monitoring;
 
-public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<DueMonitorProcessor> logger) : BackgroundService
+public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWorker> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            try
+            {
                 await using var scope = scopeFactory.CreateAsyncScope();
-
-                var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-                var httpChecker = scope.ServiceProvider.GetRequiredService<HttpMonitorChecker>();
-                var resultWriter = scope.ServiceProvider.GetRequiredService<CheckResultWriter>();
-
-                var processor = new DueMonitorProcessor(dbContext, httpChecker, resultWriter, logger);
-
+                var processor = scope.ServiceProvider.GetRequiredService<DueMonitorProcessor>();
                 await processor.ProcessDueAsync(stoppingToken);
-                
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
-                }
-                catch (OperationCanceledException)
-                    when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Monitoring iteration failed");
+            }
+
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 }

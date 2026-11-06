@@ -1,8 +1,11 @@
 using app.Models;
+using app.Monitoring;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Testcontainers.PostgreSql;
 
 namespace Pulse.IntegrationTests.Fixtures;
@@ -32,5 +35,18 @@ public class PulseWebApplicationFactory<TProgram> : WebApplicationFactory<TProgr
         builder.UseSetting(
             "ConnectionStrings:ConnStr",
             _postgres.GetConnectionString());
+        
+        builder.ConfigureTestServices(services =>
+        {
+            var workerRegistration = services.SingleOrDefault(
+                descriptor =>
+                    descriptor.ServiceType == typeof(IHostedService) &&
+                    descriptor.ImplementationType == typeof(MonitorWorker));
+
+            if (workerRegistration is not null)
+            {
+                services.Remove(workerRegistration);
+            }
+        });
     }
 }

@@ -38,6 +38,13 @@ public class ServiceDto : IValidatableObject
                 "BaseUrl must be an absolute HTTPS URL",
                 [nameof(BaseUrl)]);
         }
+        
+        // if (Uri.CheckHostName(BaseUrl) != UriHostNameType.Dns)
+        // {
+        //     yield return new ValidationResult(
+        //         "BaseUrl is not valid DNS",
+        //         [nameof(BaseUrl)]);
+        // }
     }
 }
 
