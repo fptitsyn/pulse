@@ -12,7 +12,8 @@ http:
       {
         "path": "questions",
         "intervalSeconds": 10,
-        "httpMethod": "GET"
+        "httpMethod": "GET",
+        "isEnabled": true
       }
   auth:
     type: bearer

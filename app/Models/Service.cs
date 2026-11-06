@@ -35,7 +35,7 @@ public class ServiceDto : IValidatableObject
         if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
         {
             yield return new ValidationResult(
-                "BaseUrl must be an absolute HTTP or HTTPS URL",
+                "BaseUrl must be an absolute HTTPS URL",
                 [nameof(BaseUrl)]);
         }
     }

@@ -50,13 +50,13 @@ public static class MonitorHandler
                 if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
 
                 var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
-                                                                                m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                    m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
 
                 var monitorReturn = new
                 {
-                    monitor.ServiceId,
                     monitor.MonitorId,
+                    monitor.ServiceId,
                     monitor.Path,
                     monitor.IntervalSeconds,
                     HttpMethod = monitor.HttpMethod.Method,
@@ -85,7 +85,7 @@ public static class MonitorHandler
                     IntervalSeconds = monitorDto.IntervalSeconds,
                     HttpMethod = HttpMethod.Parse(monitorDto.HttpMethod),
                     NextCheckAt = DateTime.UtcNow + TimeSpan.FromSeconds(monitorDto.IntervalSeconds),
-                    IsEnabled = true
+                    IsEnabled = monitorDto.IsEnabled
                 };
 
                 var entry = dbContext.Monitors.Add(monitor);
@@ -105,7 +105,7 @@ public static class MonitorHandler
                 if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
 
                 var monitor = await dbContext.Monitors.FirstOrDefaultAsync(m => m.Service.ApplicationUserId == userId &&
-                                                                                m.ServiceId == serviceId && m.MonitorId == monitorId, token);
+                    m.ServiceId == serviceId && m.MonitorId == monitorId, token);
                 if (monitor == null) return Results.NotFound();
 
                 monitor.Path = monitorDto.Path;

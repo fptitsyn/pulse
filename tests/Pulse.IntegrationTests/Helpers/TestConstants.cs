@@ -9,7 +9,7 @@ public static class TestConstants
     public static readonly ServiceDto TestService = new()
     {
         Name = "testName",
-        BaseUrl = "http://test.com"
+        BaseUrl = "https://test.com"
     };
     
     public static readonly MonitorDto TestMonitor = new()

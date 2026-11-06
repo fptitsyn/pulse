@@ -33,6 +33,16 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
                 
                 foreach (var monitor in dueMonitors)
                 {
+                    if (monitor.HttpMethod != HttpMethod.Get &&
+                        monitor.HttpMethod != HttpMethod.Head)
+                    {
+                        logger.LogWarning(
+                            "Monitor {MonitorId} uses an unsupported HTTP method",
+                            monitor.MonitorId);
+
+                        continue;
+                    }
+                    
                     Uri uri = new Uri($"{monitor.Service.BaseUrl.TrimEnd('/')}/{monitor.Path.TrimStart('/')}",
                         UriKind.Absolute);
                     var checkOutcome = await httpChecker.SendRequestAsync(uri, monitor.HttpMethod, stoppingToken);
