@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "path": "/create",
+        "path": "questions",
         "intervalSeconds": 10,
         "httpMethod": "GET"
       }

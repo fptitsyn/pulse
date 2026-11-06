@@ -10,12 +10,12 @@ http:
     type: json
     data: |-
       {
-        "baseUrl": "http://mirea.ru",
-        "name": "mirea"
+        "baseUrl": "https://stackoverflow.com",
+        "name": "stackoverflow"
       }
   auth:
     type: bearer
-    token: "{{bearer2_token}}"
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

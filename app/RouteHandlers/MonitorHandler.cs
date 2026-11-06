@@ -136,5 +136,27 @@ public static class MonitorHandler
 
                 return Results.NoContent();
             }).RequireAuthorization();
+        
+        app.MapGet("/monitors/",
+            async (PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
+            {
+                int? userId = RouteHelper.GetUserId(user);
+                if (userId == null) return Results.Unauthorized();
+                
+                var monitors = await dbContext.Monitors
+                    .Where(m => m.Service.ApplicationUserId == userId)
+                    .Select(m => new
+                    {
+                        m.MonitorId,
+                        m.ServiceId,
+                        m.Path,
+                        m.IntervalSeconds,
+                        HttpMethod = m.HttpMethod.Method,
+                        m.IsEnabled
+                    })
+                    .ToListAsync(token);
+
+                return Results.Ok(monitors);
+            }).RequireAuthorization();
     }
 }

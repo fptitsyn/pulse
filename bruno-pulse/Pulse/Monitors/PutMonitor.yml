@@ -10,9 +10,10 @@ http:
     type: json
     data: |-
       {
-        "path": "/updatedPath",
-        "intervalSeconds": 5,
-        "httpMethod": "POST"
+        "path": "about/mirea-today/",
+        "intervalSeconds": 10,
+        "httpMethod": "GET",
+        "isEnabled": false
       }
   auth:
     type: bearer
