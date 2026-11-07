@@ -32,7 +32,7 @@ public class MonitorDto : IValidatableObject
     [Range(1, 60 * 60 * 24)]
     public int IntervalSeconds { get; set; }
     [Required]
-    public string HttpMethod { get; set; }
+    public required string HttpMethod { get; set; }
     [Required]
     public required bool IsEnabled { get; set; }
     
