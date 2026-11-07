@@ -16,6 +16,7 @@ public static class TestConstants
     {
         Path = "testPath",
         IntervalSeconds = 3,
-        HttpMethod = "HEAD"
+        HttpMethod = "HEAD",
+        IsEnabled = true
     };
 }

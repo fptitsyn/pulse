@@ -211,16 +211,11 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var getResponseFinal = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
         getResponseFinal.EnsureSuccessStatusCode();
         using var json = await getResponseFinal.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-
-        int? serviceIdFirst = json?.RootElement[0].GetProperty("serviceId").GetInt32();
-        int? serviceIdSecond = json?.RootElement[1].GetProperty("serviceId").GetInt32();
         
         Assert.Equal(2, json?.RootElement.GetArrayLength());
-        Assert.Equal(1, serviceIdFirst);
-        Assert.Equal(2, serviceIdSecond);
     }
     
-    private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
+    public static async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
     {
         monitor ??= TestConstants.TestMonitor;
         

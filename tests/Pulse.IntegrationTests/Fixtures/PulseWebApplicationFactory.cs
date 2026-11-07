@@ -32,9 +32,7 @@ public class PulseWebApplicationFactory<TProgram> : WebApplicationFactory<TProgr
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseSetting(
-            "ConnectionStrings:ConnStr",
-            _postgres.GetConnectionString());
+        builder.UseSetting("ConnectionStrings:ConnStr", _postgres.GetConnectionString());
         
         builder.ConfigureTestServices(services =>
         {
