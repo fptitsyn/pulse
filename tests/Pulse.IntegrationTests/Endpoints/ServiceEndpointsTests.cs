@@ -10,11 +10,11 @@ using Pulse.IntegrationTests.Helpers;
 
 namespace Pulse.IntegrationTests.Endpoints;
 
-public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
+public class ServiceEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
+    public ServiceEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
         _factory = factory;
     }

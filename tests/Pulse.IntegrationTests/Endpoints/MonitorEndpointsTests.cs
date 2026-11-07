@@ -163,7 +163,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         Assert.Equal(HttpStatusCode.OK, getAllMonitors.StatusCode);
 
         using var json = await getAllMonitors.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        Assert.Equal(1, json.RootElement.GetArrayLength());
+        Assert.Equal(1, json?.RootElement.GetArrayLength());
 
         using var getWrongServiceMonitors = await client.GetAsync($"/services/{serviceId}/monitors/",
             TestContext.Current.CancellationToken);
@@ -190,13 +190,39 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var badGetResponse = await client.GetAsync($"services/{serviceId}/monitors/", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.BadRequest, badGetResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task GetAllMonitors_ForCurrentUser_ReturnsOnlyCurrentUserMonitors()
+    {
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
+        
+        using var getResponseInitial = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
+        getResponseInitial.EnsureSuccessStatusCode();
+        using var initialJson = await getResponseInitial.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        Assert.Equal(0, initialJson?.RootElement.GetArrayLength());
+        
+        await CreateMonitor(clientA);
+        await CreateMonitor(clientA);
+        await CreateMonitor(clientB);
+
+        using var getResponseFinal = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
+        getResponseFinal.EnsureSuccessStatusCode();
+        using var json = await getResponseFinal.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+
+        int? serviceIdFirst = json?.RootElement[0].GetProperty("serviceId").GetInt32();
+        int? serviceIdSecond = json?.RootElement[1].GetProperty("serviceId").GetInt32();
+        
+        Assert.Equal(2, json?.RootElement.GetArrayLength());
+        Assert.Equal(1, serviceIdFirst);
+        Assert.Equal(2, serviceIdSecond);
+    }
     
     private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
     {
-        if (monitor == null)
-        {
-            monitor = TestConstants.TestMonitor;
-        }
+        monitor ??= TestConstants.TestMonitor;
         
         using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
             TestContext.Current.CancellationToken);
