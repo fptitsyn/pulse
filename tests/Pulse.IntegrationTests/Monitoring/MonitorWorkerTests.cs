@@ -43,16 +43,28 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         await using var verificationScope = factory.Services.CreateAsyncScope();
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<PulseDbContext>();
 
-        var results = await verificationDb.CheckResults.AsNoTracking()
+        var checkResults = await verificationDb.CheckResults.AsNoTracking()
             .Where(r => r.MonitorId == monitorId)
             .ToListAsync(TestContext.Current.CancellationToken);
 
-        var result = Assert.Single(results);
-        Assert.Equal(HttpMonitorChecker.Success, result.Outcome);
+        var checkResult = Assert.Single(checkResults);
+        Assert.Equal(HttpMonitorChecker.Success, checkResult.Outcome);
 
         var updatedMonitor = await verificationDb.Monitors.AsNoTracking()
             .SingleAsync(m => m.MonitorId == monitorId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(result.CheckedAt.AddSeconds(TestConstants.TestMonitor.IntervalSeconds), updatedMonitor.NextCheckAt);
+        Assert.Equal(checkResult.CheckedAt.AddSeconds(TestConstants.TestMonitor.IntervalSeconds), updatedMonitor.NextCheckAt);
+    }
+
+    [Theory]
+    [InlineData("https://base/", "/path")]
+    [InlineData("https://base", "/path")]
+    [InlineData("https://base/", "path")]
+    [InlineData("https://base", "path")]
+    public void BaseUrlAndPath_CombinedSuccessfully(string baseUrl, string path)
+    {
+        Uri validUri = new Uri("https://base/path");
+        Uri uri = CustomUriBuilder.Build(baseUrl, path);
+        Assert.Equal(validUri, uri);
     }
 }

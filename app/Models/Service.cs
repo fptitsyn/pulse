@@ -32,19 +32,13 @@ public class ServiceDto : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps ||
+            uri.HostNameType != UriHostNameType.Dns)
         {
             yield return new ValidationResult(
-                "BaseUrl must be an absolute HTTPS URL",
+                "BaseUrl must be an absolute HTTPS URL and valid DNS",
                 [nameof(BaseUrl)]);
         }
-        
-        // if (Uri.CheckHostName(BaseUrl) != UriHostNameType.Dns)
-        // {
-        //     yield return new ValidationResult(
-        //         "BaseUrl is not valid DNS",
-        //         [nameof(BaseUrl)]);
-        // }
     }
 }
 

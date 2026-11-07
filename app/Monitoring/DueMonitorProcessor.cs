@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using app.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,8 +37,14 @@ public class DueMonitorProcessor(
                     continue;
                 }
 
-                Uri uri = new Uri($"{monitor.Service.BaseUrl.TrimEnd('/')}/{monitor.Path.TrimStart('/')}", 
-                    UriKind.Absolute);
+                Uri? uri = CustomUriBuilder.Build(monitor.Service.BaseUrl, monitor.Path);
+                if (uri == null)
+                {
+                    var ex = new ArgumentException("Invalid URI");
+                    logger.LogError(ex, "Invalid URI for Monitor #{monitorId}", monitor.MonitorId);
+                    throw ex;
+                }
+                
                 var checkOutcome = await httpChecker.SendRequestAsync(uri, monitor.HttpMethod, token);
 
                 resultWriter.AddCheckResult(monitor.MonitorId, checkOutcome);
