@@ -75,7 +75,8 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         {
             Path = "testPath",
             IntervalSeconds = 3,
-            HttpMethod = "HEAD"
+            HttpMethod = "HEAD",
+            IsEnabled = true
         };
 
         var monitorLocation = await CreateMonitor(client, initialMonitor);

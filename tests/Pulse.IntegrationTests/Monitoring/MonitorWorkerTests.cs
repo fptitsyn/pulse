@@ -1,3 +1,4 @@
+using System.Net;
 using app.Models;
 using app.Monitoring;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Pulse.IntegrationTests.Endpoints;
 using Pulse.IntegrationTests.Fixtures;
 using Pulse.IntegrationTests.Helpers;
-using Pulse.UnitTests.Monitoring;   
 
 namespace Pulse.IntegrationTests.Monitoring;
 
@@ -64,7 +64,24 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
     public void BaseUrlAndPath_CombinedSuccessfully(string baseUrl, string path)
     {
         Uri validUri = new Uri("https://base/path");
-        Uri uri = CustomUriBuilder.Build(baseUrl, path);
+        Uri? uri = CustomUriBuilder.Build(baseUrl, path);
         Assert.Equal(validUri, uri);
+    }
+}
+
+public sealed class SuccessHttpHandler : HttpMessageHandler
+{
+    public Uri? ReceivedUri { get; private set; }
+    public HttpMethod? ReceivedMethod { get; private set; }
+    
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        ReceivedUri = request.RequestUri;
+        ReceivedMethod = request.Method;
+        var response = new HttpResponseMessage(HttpStatusCode.OK);
+
+        return Task.FromResult(response);
     }
 }

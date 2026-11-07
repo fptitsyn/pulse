@@ -33,7 +33,8 @@ public class MonitorDto : IValidatableObject
     public int IntervalSeconds { get; set; }
     [Required]
     public string HttpMethod { get; set; }
-    public bool IsEnabled { get; set; }
+    [Required]
+    public required bool IsEnabled { get; set; }
     
     private readonly Dictionary<string, HttpMethod> _allowedMethods =
         new(StringComparer.OrdinalIgnoreCase)
