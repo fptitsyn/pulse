@@ -15,11 +15,7 @@ public static class TestAuthentication
             password
         };
 
-        using var response = await client.PostAsJsonAsync(
-            "/register",
-            request,
-            TestContext.Current.CancellationToken);
-
+        using var response = await client.PostAsJsonAsync("/register", request, TestContext.Current.CancellationToken);
         response.EnsureSuccessStatusCode();
     }
 
@@ -31,16 +27,11 @@ public static class TestAuthentication
             password
         };
 
-        using var response = await client.PostAsJsonAsync("/login?useCookies=false",
-            request,
-            TestContext.Current.CancellationToken);
-
+        using var response = await client.PostAsJsonAsync("/login?useCookies=false", request, TestContext.Current.CancellationToken);
         response.EnsureSuccessStatusCode();
         
         using var json = await response.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        string token = json.RootElement
-            .GetProperty("accessToken")
-            .GetString();
+        string token = json.RootElement.GetProperty("accessToken").GetString();
 
         if (string.IsNullOrWhiteSpace(token))
         {

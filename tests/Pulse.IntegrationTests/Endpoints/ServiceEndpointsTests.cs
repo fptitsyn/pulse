@@ -10,11 +10,11 @@ using Pulse.IntegrationTests.Helpers;
 
 namespace Pulse.IntegrationTests.Endpoints;
 
-public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
+public class ServiceEndpointsTests : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     private readonly WebApplicationFactory<Program> _factory;
 
-    public ServicesEndpointsTests(PulseWebApplicationFactory<Program> factory)
+    public ServiceEndpointsTests(PulseWebApplicationFactory<Program> factory)
     {
         _factory = factory;
     }
@@ -197,7 +197,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         ServiceDto updatedServiceDto = new ServiceDto
         {
             Name = "UpdatedName",
-            BaseUrl = "http://updated-test.com"
+            BaseUrl = "https://updated-test.com"
         };
         
         // Act
@@ -244,9 +244,9 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
     // CRUD
     [Theory]
     [InlineData("testName", "https://test-url.com")]
-    [InlineData("testName", "http://pulse.com")]
-    [InlineData("updatedName", "http://test.com")]
-    [InlineData("testName", "http://test.com")]
+    [InlineData("testName", "https://pulse.com")]
+    [InlineData("updatedName", "https://test.com")]
+    [InlineData("testName", "https://test.com")]
     public async Task UpdateService_AsOwner_PersistsChanges(string name, string baseUrl)
     {
         // Arrange
@@ -256,7 +256,7 @@ public class ServicesEndpointsTests : IClassFixture<PulseWebApplicationFactory<P
         ServiceDto serviceDto = new ServiceDto
         {
             Name = "testName",
-            BaseUrl = "http://test.com"
+            BaseUrl = "https://test.com"
         };
 
         using var postResponse = await client.PostAsJsonAsync("/services", serviceDto, TestContext.Current.CancellationToken);

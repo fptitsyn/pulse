@@ -7,7 +7,7 @@ public class HttpMonitorChecker
 {
     public const string Success = "SUCCESS";
     public const string HttpError = "HTTP_ERROR";
-    public const string RequestTimeOut = "TIMEOUT";
+    public const string RequestTimeout = "TIMEOUT";
     public const string NetworkError = "NETWORK_ERROR";
     
     private readonly HttpClient _client;
@@ -46,7 +46,7 @@ public class HttpMonitorChecker
         catch (OperationCanceledException e)
         {
             _logger.LogDebug(e, "The request timed out.");
-            return BuildHttpCheckOutcome(stopwatch, null, RequestTimeOut);
+            return BuildHttpCheckOutcome(stopwatch, null, RequestTimeout);
         }
     }
 

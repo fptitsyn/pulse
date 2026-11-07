@@ -9,13 +9,14 @@ public static class TestConstants
     public static readonly ServiceDto TestService = new()
     {
         Name = "testName",
-        BaseUrl = "http://test.com"
+        BaseUrl = "https://test.com"
     };
     
     public static readonly MonitorDto TestMonitor = new()
     {
         Path = "testPath",
         IntervalSeconds = 3,
-        HttpMethod = "HEAD"
+        HttpMethod = "HEAD",
+        IsEnabled = true
     };
 }

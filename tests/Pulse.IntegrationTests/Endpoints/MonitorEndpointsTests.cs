@@ -52,7 +52,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         var path = json.RootElement.GetProperty("path").GetString();
         var intervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
-        var httpMethod = json.RootElement.GetProperty("method").GetString();
+        var httpMethod = json.RootElement.GetProperty("httpMethod").GetString();
         
         Assert.Equal(TestConstants.TestMonitor.Path, path);
         Assert.Equal(TestConstants.TestMonitor.IntervalSeconds, intervalSeconds);
@@ -94,7 +94,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         
         var updatedPath = json.RootElement.GetProperty("path").GetString();
         var updatedIntervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
-        var updatedHttpMethod = json.RootElement.GetProperty("method").GetString();
+        var updatedHttpMethod = json.RootElement.GetProperty("httpMethod").GetString();
         
         Assert.Equal(path, updatedPath);
         Assert.Equal(intervalSeconds, updatedIntervalSeconds);
@@ -163,7 +163,7 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         Assert.Equal(HttpStatusCode.OK, getAllMonitors.StatusCode);
 
         using var json = await getAllMonitors.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        Assert.Equal(1, json.RootElement.GetArrayLength());
+        Assert.Equal(1, json?.RootElement.GetArrayLength());
 
         using var getWrongServiceMonitors = await client.GetAsync($"/services/{serviceId}/monitors/",
             TestContext.Current.CancellationToken);
@@ -190,13 +190,34 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         using var badGetResponse = await client.GetAsync($"services/{serviceId}/monitors/", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.BadRequest, badGetResponse.StatusCode);
     }
-    
-    private async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
+
+    [Fact]
+    public async Task GetAllMonitors_ForCurrentUser_ReturnsOnlyCurrentUserMonitors()
     {
-        if (monitor == null)
-        {
-            monitor = TestConstants.TestMonitor;
-        }
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
+        
+        using var getResponseInitial = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
+        getResponseInitial.EnsureSuccessStatusCode();
+        using var initialJson = await getResponseInitial.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        Assert.Equal(0, initialJson?.RootElement.GetArrayLength());
+        
+        await CreateMonitor(clientA);
+        await CreateMonitor(clientA);
+        await CreateMonitor(clientB);
+
+        using var getResponseFinal = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
+        getResponseFinal.EnsureSuccessStatusCode();
+        using var json = await getResponseFinal.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        
+        Assert.Equal(2, json?.RootElement.GetArrayLength());
+    }
+    
+    public static async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
+    {
+        monitor ??= TestConstants.TestMonitor;
         
         using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
             TestContext.Current.CancellationToken);

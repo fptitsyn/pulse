@@ -43,7 +43,7 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
 
             entity.HasOne(d => d.Monitor).WithMany(p => p.CheckResults)
                 .HasForeignKey(d => d.MonitorId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("check_results_monitor_id_fkey");
         });
 

@@ -23,10 +23,21 @@ builder.Services.AddDbContext<PulseDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHostedService<MonitorWorker>();
+builder.Services.AddScoped<CheckResultWriter>();
+
 builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(10);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    AllowAutoRedirect = false,
+    UseCookies = false,
+    UseDefaultCredentials = false
 });
+
+builder.Services.AddScoped<DueMonitorProcessor>();
 
 var app = builder.Build();
 

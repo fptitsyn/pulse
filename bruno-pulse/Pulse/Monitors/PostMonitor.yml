@@ -10,9 +10,10 @@ http:
     type: json
     data: |-
       {
-        "path": "/create",
+        "path": "questions",
         "intervalSeconds": 10,
-        "httpMethod": "GET"
+        "httpMethod": "GET",
+        "isEnabled": true
       }
   auth:
     type: bearer
