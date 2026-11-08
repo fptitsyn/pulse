@@ -6,7 +6,7 @@ using Monitor = app.Models.Monitor;
 
 namespace app.RouteHandlers;
 
-public static class MonitorHandler
+public static class MonitorRouteHandler
 {
     private const string BaseUrl = "/services/{serviceId}/monitors/";
 
@@ -15,7 +15,7 @@ public static class MonitorHandler
         app.MapGet(BaseUrl,
             async (int serviceId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0) return Results.BadRequest();
@@ -44,7 +44,7 @@ public static class MonitorHandler
         app.MapGet(BaseUrl + "{monitorId}",
             async (int serviceId, int monitorId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
@@ -69,7 +69,7 @@ public static class MonitorHandler
         app.MapPost(BaseUrl,
             async ([FromBody] MonitorDto monitorDto, int serviceId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0) return Results.BadRequest();
@@ -99,7 +99,7 @@ public static class MonitorHandler
         app.MapPut(BaseUrl + "{monitorId}",
             async ([FromBody] MonitorDto monitorDto, int serviceId, int monitorId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
@@ -121,7 +121,7 @@ public static class MonitorHandler
         app.MapDelete(BaseUrl + "{monitorId}",
             async (int serviceId, int monitorId, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
@@ -140,7 +140,7 @@ public static class MonitorHandler
         app.MapGet("/monitors/",
             async (PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken token) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
                 
                 var monitors = await dbContext.Monitors

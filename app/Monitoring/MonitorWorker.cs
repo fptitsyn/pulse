@@ -10,7 +10,13 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var processor = scope.ServiceProvider.GetRequiredService<DueMonitorProcessor>();
-                await processor.ProcessDueAsync(stoppingToken);
+                var checkResults = await processor.ProcessDueAsync(stoppingToken);
+                
+                var serviceStatusHandler = scope.ServiceProvider.GetRequiredService<ServiceStatusHandler>();
+                foreach (var checkResult in checkResults)
+                {
+                    await serviceStatusHandler.ConsiderServiceStatus(checkResult, stoppingToken);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -20,7 +26,7 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
             {
                 logger.LogError(ex, "Monitoring iteration failed");
             }
-
+            
             try
             {
                 await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);

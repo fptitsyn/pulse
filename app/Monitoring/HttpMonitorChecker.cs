@@ -60,3 +60,5 @@ public class HttpMonitorChecker
         return checkOutcome;
     }
 }
+
+public record HttpCheckOutcome(DateTime CheckedAt, int DurationMs, HttpStatusCode? HttpStatusCode, string Outcome);

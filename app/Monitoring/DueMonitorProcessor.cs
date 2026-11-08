@@ -10,7 +10,7 @@ public class DueMonitorProcessor(
     CheckResultWriter resultWriter,
     ILogger<DueMonitorProcessor> logger)
 {
-    public async Task ProcessDueAsync(CancellationToken token)
+    public async Task<List<CheckResult>> ProcessDueAsync(CancellationToken token)
     {
         var now = DateTime.UtcNow;
 
@@ -22,6 +22,8 @@ public class DueMonitorProcessor(
             .ToListAsync(token);
 
         logger.LogDebug("Found {Count} due monitors", dueMonitors.Count);
+
+        var checkResults = new List<CheckResult>();
         
         foreach (var monitor in dueMonitors)
         {
@@ -69,10 +71,13 @@ public class DueMonitorProcessor(
                 continue;
             }
             
-            resultWriter.AddCheckResult(monitor.MonitorId, checkOutcome);
+            var checkResult = resultWriter.AddCheckResult(monitor.MonitorId, checkOutcome);
+            checkResults.Add(checkResult);
             monitor.NextCheckAt = checkOutcome.CheckedAt.AddSeconds(monitor.IntervalSeconds);
-
+            
             await dbContext.SaveChangesAsync(token);
         }
+
+        return checkResults;
     }
 }
