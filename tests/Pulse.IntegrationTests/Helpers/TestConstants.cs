@@ -15,7 +15,7 @@ public static class TestConstants
     public static readonly MonitorDto TestMonitor = new()
     {
         Path = "testPath",
-        IntervalSeconds = 3,
+        IntervalSeconds = 5,
         HttpMethod = "HEAD",
         IsEnabled = true
     };

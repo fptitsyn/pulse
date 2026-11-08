@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using app.Models;
 using app.Monitoring;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +80,7 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<PulseDbContext>();
 
         var checkResults = await verificationDb.CheckResults.AsNoTracking()
+            .Where(r => r.MonitorId == monitorId)
             .ToListAsync(TestContext.Current.CancellationToken);
 
         Assert.Empty(checkResults);
@@ -87,6 +89,114 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
             .SingleAsync(m => m.MonitorId == monitorId, TestContext.Current.CancellationToken);
 
         Assert.False(updatedMonitor.IsEnabled);
+    }
+    
+    [Fact]
+    public async Task NotDueMonitor_DoesNotExecute()
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+        
+        await using var scope = factory.Services.CreateAsyncScope();
+        using var httpClient = new HttpClient(new SuccessHttpHandler());
+        
+        var checker = new HttpMonitorChecker(httpClient, NullLogger<HttpMonitorChecker>.Instance);
+        var writer = scope.ServiceProvider.GetRequiredService<CheckResultWriter>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
+        
+        var processor = new DueMonitorProcessor(dbContext, checker, writer, NullLogger<DueMonitorProcessor>.Instance);
+        
+        var location = await MonitorEndpointsTests.CreateMonitor(client);
+        var monitorId = int.Parse(location!.ToString().TrimEnd('/').Split('/')[^1]);
+        
+        var monitor = await dbContext.Monitors.FindAsync([monitorId], TestContext.Current.CancellationToken);
+        Assert.NotNull(monitor);
+
+        monitor.IsEnabled = true;
+        monitor.NextCheckAt = DateTime.UtcNow.AddMinutes(5);
+        
+        await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
+        
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<PulseDbContext>();
+
+        var checkResults = await verificationDb.CheckResults.AsNoTracking()
+            .Where(r => r.MonitorId == monitorId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(checkResults);
+    }
+
+    [Fact]
+    public async Task InvalidMonitor_DoesNotPrevent_FurtherExecution()
+    {
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+        
+        await using var scope = factory.Services.CreateAsyncScope();
+        using var httpClient = new HttpClient(new SuccessHttpHandler());
+        
+        var checker = new HttpMonitorChecker(httpClient, NullLogger<HttpMonitorChecker>.Instance);
+        var writer = scope.ServiceProvider.GetRequiredService<CheckResultWriter>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
+        
+        var processor = new DueMonitorProcessor(dbContext, checker, writer, NullLogger<DueMonitorProcessor>.Instance);
+
+        var invalidService = new ServiceDto
+        {
+            BaseUrl = "https://localhost",
+            Name = "InternalTest"
+        };
+        
+        var invalidMonitorDto = new MonitorDto
+        {
+            Path = "health",
+            HttpMethod = "Get",
+            IntervalSeconds = 5,
+            IsEnabled = true
+        };
+        
+        using var servicesResponse = await client.PostAsJsonAsync("/services", invalidService,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+        var serviceLocation = servicesResponse.Headers.Location;
+        
+        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", invalidMonitorDto,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
+        
+        var invalidMonitorLocation = monitorResponse.Headers.Location;
+        var invalidMonitorId = int.Parse(invalidMonitorLocation!.ToString().TrimEnd('/').Split('/')[^1]);
+        var validMonitorLocation = await MonitorEndpointsTests.CreateMonitor(client);
+        var validMonitorId = int.Parse(validMonitorLocation!.ToString().TrimEnd('/').Split('/')[^1]);
+
+        await MakeMonitorDueAsync(dbContext, invalidMonitorId, true, TestContext.Current.CancellationToken);
+        await MakeMonitorDueAsync(dbContext, validMonitorId, true, TestContext.Current.CancellationToken);
+        
+        var invalidMonitor = await dbContext.Monitors.Include(m => m.Service)
+            .SingleAsync(m => m.MonitorId == invalidMonitorId, TestContext.Current.CancellationToken);
+
+        invalidMonitor.Service.BaseUrl = "not-a-valid-url";
+
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
+        
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<PulseDbContext>();
+
+        var checkResults = await verificationDb.CheckResults.AsNoTracking()
+            .Where(r => r.MonitorId == validMonitorId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        var checkResult = Assert.Single(checkResults);
+
+        var validMonitor = await verificationDb.Monitors.AsNoTracking()
+            .SingleAsync(m => m.MonitorId == validMonitorId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(checkResult.CheckedAt.AddSeconds(TestConstants.TestMonitor.IntervalSeconds), validMonitor.NextCheckAt);
+        Assert.True(validMonitor.IsEnabled);
     }
     
     private static async Task MakeMonitorDueAsync(PulseDbContext db, int monitorId, bool isEnabled, CancellationToken token)

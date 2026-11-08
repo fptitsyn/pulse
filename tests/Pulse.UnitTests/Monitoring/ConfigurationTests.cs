@@ -1,4 +1,5 @@
 using app.Monitoring;
+using Microsoft.Security.AntiSSRF;
 
 namespace Pulse.UnitTests.Monitoring;
 
@@ -15,4 +16,14 @@ public class ConfigurationTests
         Uri? uri = CustomUriBuilder.Build(baseUrl, path);
         Assert.Equal(validUri, uri);
     }
+    
+    [Fact]
+    public async Task Monitor_WithInternalDestination_IsRejected()
+    {
+        var policy = new AntiSSRFPolicy(PolicyConfigOptions.ExternalOnlyLatest);
+        using var httpClient = new HttpClient(policy.GetHandler());
+
+        await Assert.ThrowsAsync<AntiSSRFException>(
+            () => httpClient.GetAsync("https://localhost/health", TestContext.Current.CancellationToken));
+    } 
 }
