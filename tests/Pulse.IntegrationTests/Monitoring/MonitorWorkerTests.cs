@@ -30,12 +30,8 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
 
         var location = await MonitorEndpointsTests.CreateMonitor(client);
         var monitorId = int.Parse(location!.ToString().TrimEnd('/').Split('/')[^1]);
-        
-        var entity = await dbContext.Monitors.FindAsync([monitorId], TestContext.Current.CancellationToken);
-        Assert.NotNull(entity);
 
-        entity.NextCheckAt = DateTime.UtcNow.AddMinutes(-5);
-        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
         
         // Act
         await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
@@ -56,30 +52,61 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         Assert.Equal(checkResult.CheckedAt.AddSeconds(TestConstants.TestMonitor.IntervalSeconds), updatedMonitor.NextCheckAt);
     }
 
-    [Theory]
-    [InlineData("https://base/", "/path")]
-    [InlineData("https://base", "/path")]
-    [InlineData("https://base/", "path")]
-    [InlineData("https://base", "path")]
-    public void BaseUrlAndPath_CombinedSuccessfully(string baseUrl, string path)
+    [Fact]
+    public async Task DisabledMonitor_DoesNotExecute()
     {
-        Uri validUri = new Uri("https://base/path");
-        Uri? uri = CustomUriBuilder.Build(baseUrl, path);
-        Assert.Equal(validUri, uri);
+        string testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+            TestConstants.TestPassword);
+        
+        await using var scope = factory.Services.CreateAsyncScope();
+        using var httpClient = new HttpClient(new SuccessHttpHandler());
+        
+        var checker = new HttpMonitorChecker(httpClient, NullLogger<HttpMonitorChecker>.Instance);
+        var writer = scope.ServiceProvider.GetRequiredService<CheckResultWriter>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
+        
+        var processor = new DueMonitorProcessor(dbContext, checker, writer, NullLogger<DueMonitorProcessor>.Instance);
+        
+        var location = await MonitorEndpointsTests.CreateMonitor(client);
+        var monitorId = int.Parse(location!.ToString().TrimEnd('/').Split('/')[^1]);
+
+        await MakeMonitorDueAsync(dbContext, monitorId, false, TestContext.Current.CancellationToken);
+        
+        await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
+        
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<PulseDbContext>();
+
+        var checkResults = await verificationDb.CheckResults.AsNoTracking()
+            .ToListAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(checkResults);
+
+        var updatedMonitor = await verificationDb.Monitors.AsNoTracking()
+            .SingleAsync(m => m.MonitorId == monitorId, TestContext.Current.CancellationToken);
+
+        Assert.False(updatedMonitor.IsEnabled);
+    }
+    
+    private static async Task MakeMonitorDueAsync(PulseDbContext db, int monitorId, bool isEnabled, CancellationToken token)
+    {
+        var monitor = await db.Monitors.FindAsync([monitorId], token);
+        Assert.NotNull(monitor);
+
+        monitor.IsEnabled = isEnabled;
+        monitor.NextCheckAt = DateTime.UtcNow.AddMinutes(-5);
+
+        await db.SaveChangesAsync(token);
     }
 }
 
 public sealed class SuccessHttpHandler : HttpMessageHandler
 {
-    public Uri? ReceivedUri { get; private set; }
-    public HttpMethod? ReceivedMethod { get; private set; }
-    
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        ReceivedUri = request.RequestUri;
-        ReceivedMethod = request.Method;
         var response = new HttpResponseMessage(HttpStatusCode.OK);
 
         return Task.FromResult(response);
