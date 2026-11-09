@@ -42,6 +42,7 @@ builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
     });
 
 builder.Services.AddScoped<DueMonitorProcessor>();
+builder.Services.AddScoped<ServiceStatusHandler>();
 
 var app = builder.Build();
 

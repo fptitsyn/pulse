@@ -6,8 +6,6 @@ public class ServiceStatusHandler(PulseDbContext dbContext)
 {
     public async Task ConsiderServiceStatus(CheckResult checkResult, CancellationToken token)
     {
-        // var monitor = await dbContext.Monitors.FindAsync([checkResult.MonitorId], token);
-        // var service = await dbContext.Services.FindAsync([monitor.ServiceId], token);
         var service = await dbContext.Services.FindAsync([checkResult.Monitor.ServiceId], token);
         
         service.ServiceStatus = checkResult.Outcome switch
