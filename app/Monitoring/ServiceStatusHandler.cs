@@ -7,22 +7,23 @@ public class ServiceStatusHandler(PulseDbContext dbContext)
 {
     public async Task ConsiderServiceStatus(Service service, CancellationToken token)
     {
-        var monitors = await dbContext.Monitors
-            .Include(m => m.CheckResults)
-            .Where(m => m.ServiceId == service.ServiceId && m.IsEnabled && m.CheckResults.Count > 0)
+        var latestResults = await dbContext.Monitors
+            .Where(m => m.ServiceId == service.ServiceId && m.IsEnabled)
+            .Select(m => new
+            {
+                m.MonitorId,
+                LatestOutcome = m.CheckResults
+                    .OrderByDescending(r => r.CheckedAt)
+                    .Select(r => (CheckOutcomeType?)r.Outcome)
+                    .FirstOrDefault()
+            })
             .ToListAsync(token);
 
-        if (monitors.Count == 0) return;
-
-        List<CheckResult> latestCheckResults = new();
-        foreach (var monitor in monitors)
-        {
-            var latestForEachMonitor = monitor.CheckResults.OrderBy(ch => ch.CheckedAt).First();
-            latestCheckResults.Add(latestForEachMonitor);
-        }
-
-        service.ServiceStatus = latestCheckResults.Any(ch => ch.Outcome is CheckOutcomeType.Success or CheckOutcomeType.HttpError) ?
-            ServiceStatus.Up : ServiceStatus.Down;
+        service.ServiceStatus = latestResults.Count == 0 || latestResults.Any(r => r.LatestOutcome is null)
+            ? ServiceStatus.Unknown
+            : latestResults.All(r => r.LatestOutcome == CheckOutcomeType.Success)
+                ? ServiceStatus.Up
+                : ServiceStatus.Down;
         
         await dbContext.SaveChangesAsync(token);
     }

@@ -68,7 +68,8 @@ public class DueMonitorProcessor(
                 await dbContext.SaveChangesAsync(token);
                 continue;
             }
-            
+
+            resultWriter.AddCheckResult(monitor.MonitorId, checkOutcome);
             monitor.NextCheckAt = checkOutcome.CheckedAt.AddSeconds(monitor.IntervalSeconds);
             
             await dbContext.SaveChangesAsync(token);

@@ -22,16 +22,7 @@ public class HttpMonitorChecker
         try
         {
             using var response = await _client.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead, token);
-            CheckOutcomeType outcome;
-            if (response.IsSuccessStatusCode)
-            {
-                outcome = response.StatusCode == HttpStatusCode.ServiceUnavailable ? CheckOutcomeType.NetworkError : CheckOutcomeType.Success;
-            }
-            else
-            {
-                outcome = CheckOutcomeType.HttpError;
-            }
-
+            var outcome = response.IsSuccessStatusCode ? CheckOutcomeType.Success : CheckOutcomeType.HttpError;
             return BuildHttpCheckOutcome(stopwatch, response.StatusCode, outcome);
         }
         catch (HttpRequestException e)
