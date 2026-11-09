@@ -1,6 +1,8 @@
 *.pgerd
 *.diff
-
+.env
+.env.*
+!.env.example
 *.swp
 *.*~
 project.lock.json
