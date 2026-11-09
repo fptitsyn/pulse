@@ -1,6 +1,10 @@
+using app.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace app.Monitoring;
 
-public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWorker> logger) : BackgroundService
+public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWorker> logger) 
+    : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -21,6 +25,27 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
                 logger.LogError(ex, "Monitoring iteration failed");
             }
 
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var serviceStatusHandler = scope.ServiceProvider.GetRequiredService<ServiceStatusHandler>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
+                var services = await dbContext.Services.ToListAsync(stoppingToken);
+    
+                foreach (var service in services)
+                {
+                    await serviceStatusHandler.ConsiderServiceStatus(service, stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to update service status");
+            }
+            
             try
             {
                 await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);

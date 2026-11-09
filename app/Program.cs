@@ -2,10 +2,13 @@ using app.Models;
 using app.Monitoring;
 using app.RouteHandlers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Security.AntiSSRF;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("ConnStr");
+
+var policy = new AntiSSRFPolicy(PolicyConfigOptions.ExternalOnlyLatest);
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
@@ -27,17 +30,19 @@ builder.Services.AddHostedService<MonitorWorker>();
 builder.Services.AddScoped<CheckResultWriter>();
 
 builder.Services.AddHttpClient<HttpMonitorChecker>(client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(10);
-})
-.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-{
-    AllowAutoRedirect = false,
-    UseCookies = false,
-    UseDefaultCredentials = false
-});
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+    })
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = policy.GetHandler();
+        handler.AllowAutoRedirect = false;
+        handler.UseCookies = false;
+        return handler;
+    });
 
 builder.Services.AddScoped<DueMonitorProcessor>();
+builder.Services.AddScoped<ServiceStatusHandler>();
 
 var app = builder.Build();
 

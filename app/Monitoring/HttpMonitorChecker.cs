@@ -1,15 +1,13 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using System.Security.Authentication;
+using app.Models;
 
 namespace app.Monitoring;
 
 public class HttpMonitorChecker
 {
-    public const string Success = "SUCCESS";
-    public const string HttpError = "HTTP_ERROR";
-    public const string RequestTimeout = "TIMEOUT";
-    public const string NetworkError = "NETWORK_ERROR";
-    
     private readonly HttpClient _client;
     private readonly ILogger<HttpMonitorChecker> _logger;
 
@@ -26,18 +24,8 @@ public class HttpMonitorChecker
         try
         {
             using var response = await _client.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead, token);
-            string outcome = response.IsSuccessStatusCode ? Success : HttpError;
-
+            var outcome = response.IsSuccessStatusCode ? CheckOutcomeType.Success : CheckOutcomeType.HttpError;
             return BuildHttpCheckOutcome(stopwatch, response.StatusCode, outcome);
-        }
-        catch (HttpRequestException e)
-        {
-            _logger.LogDebug(
-                e,
-                "HTTP monitor request failed. Error category: {ErrorCategory}",
-                e.HttpRequestError);
-            
-            return BuildHttpCheckOutcome(stopwatch, null, NetworkError);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -46,11 +34,16 @@ public class HttpMonitorChecker
         catch (OperationCanceledException e)
         {
             _logger.LogDebug(e, "The request timed out.");
-            return BuildHttpCheckOutcome(stopwatch, null, RequestTimeout);
+            return BuildHttpCheckOutcome(stopwatch, null, CheckOutcomeType.Timeout);
+        }
+        catch (Exception e) when (e is HttpRequestException or SocketException or IOException or AuthenticationException)
+        {
+            _logger.LogDebug(e, "HTTP monitor transport failure");
+            return BuildHttpCheckOutcome(stopwatch, null, CheckOutcomeType.NetworkError);
         }
     }
 
-    private static HttpCheckOutcome BuildHttpCheckOutcome(Stopwatch stopwatch, HttpStatusCode? statusCode, string outcome)
+    private static HttpCheckOutcome BuildHttpCheckOutcome(Stopwatch stopwatch, HttpStatusCode? statusCode, CheckOutcomeType outcome)
     {
         DateTime now = DateTime.UtcNow;
         stopwatch.Stop();
@@ -60,3 +53,5 @@ public class HttpMonitorChecker
         return checkOutcome;
     }
 }
+
+public record HttpCheckOutcome(DateTime CheckedAt, int DurationMs, HttpStatusCode? HttpStatusCode, CheckOutcomeType Outcome);

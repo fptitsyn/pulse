@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace app.RouteHandlers;
 
-public static class ServiceHandler
+public static class ServiceRouteHandler
 {
     public static void RegisterServiceRoutes(this WebApplication app)
     {
         app.MapGet("/services", async (CancellationToken cancellationToken, PulseDbContext dbContext, ClaimsPrincipal user) =>
         {
-            int? userId = RouteHelper.GetUserId(user);
+            int? userId = RouteHandlerHelper.GetUserId(user);
             if (userId == null) return Results.Unauthorized();
             
             var services = await dbContext.Services
@@ -31,7 +31,7 @@ public static class ServiceHandler
         app.MapGet("/services/{serviceId}",
             async (int serviceId, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0) return Results.BadRequest();
@@ -54,7 +54,7 @@ public static class ServiceHandler
         app.MapPost("/services",
             async ([FromBody] ServiceDto serviceDto, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 Service service = new Service
@@ -77,7 +77,7 @@ public static class ServiceHandler
         app.MapPut("/services/{serviceId}",
             async (int serviceId, ServiceDto serviceDto, PulseDbContext dbContext, ClaimsPrincipal user, CancellationToken cancellationToken) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
                 if (serviceId <= 0) return Results.BadRequest();
@@ -96,7 +96,7 @@ public static class ServiceHandler
         app.MapDelete("/services/{serviceId}",
             async (int serviceId, PulseDbContext dbContext, CancellationToken cancellationToken, ClaimsPrincipal user) =>
             {
-                int? userId = RouteHelper.GetUserId(user);
+                int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
                 
                 if (serviceId <= 0) return Results.BadRequest();

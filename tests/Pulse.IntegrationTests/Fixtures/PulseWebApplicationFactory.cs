@@ -40,7 +40,7 @@ public class PulseWebApplicationFactory<TProgram> : WebApplicationFactory<TProgr
                 descriptor =>
                     descriptor.ServiceType == typeof(IHostedService) &&
                     descriptor.ImplementationType == typeof(MonitorWorker));
-
+            
             if (workerRegistration is not null)
             {
                 services.Remove(workerRegistration);

@@ -24,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\app\app.csproj" />
-    <ProjectReference Include="..\Pulse.UnitTests\Pulse.UnitTests.csproj" />
   </ItemGroup>
 
 </Project>

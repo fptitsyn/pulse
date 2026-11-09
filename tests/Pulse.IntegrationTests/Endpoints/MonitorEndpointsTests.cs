@@ -25,14 +25,14 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
-            TestConstants.TestPassword);
+            TestData.TestPassword);
 
         using var getResponse = await client.GetAsync("/services", TestContext.Current.CancellationToken);
         using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         Assert.Equal(0, json.RootElement.GetArrayLength());
 
         using var postMonitorResponse = await client.PostAsJsonAsync($"/services/{serviceId}/monitors/",
-            TestConstants.TestMonitor, TestContext.Current.CancellationToken);
+            TestData.NewMonitor(), TestContext.Current.CancellationToken);
         
         Assert.Equal(HttpStatusCode.NotFound, postMonitorResponse.StatusCode);
     }
@@ -42,9 +42,9 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
-            TestConstants.TestPassword);
+            TestData.TestPassword);
         
-        var monitorLocation = await CreateMonitor(client);
+        var monitorLocation = await TestData.CreateMonitor(client);
 
         using var getResponse = await client.GetAsync(monitorLocation, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
@@ -54,9 +54,9 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
         var intervalSeconds = json.RootElement.GetProperty("intervalSeconds").GetInt32();
         var httpMethod = json.RootElement.GetProperty("httpMethod").GetString();
         
-        Assert.Equal(TestConstants.TestMonitor.Path, path);
-        Assert.Equal(TestConstants.TestMonitor.IntervalSeconds, intervalSeconds);
-        Assert.Equal(TestConstants.TestMonitor.HttpMethod, httpMethod);
+        Assert.Equal(TestData.NewMonitor().Path, path);
+        Assert.Equal(TestData.NewMonitor().IntervalSeconds, intervalSeconds);
+        Assert.Equal(TestData.NewMonitor().HttpMethod, httpMethod);
     }
 
     [Theory]
@@ -69,16 +69,17 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
-            TestConstants.TestPassword);
+            TestData.TestPassword);
 
         MonitorDto initialMonitor = new()
         {
             Path = "testPath",
             IntervalSeconds = 3,
-            HttpMethod = "HEAD"
+            HttpMethod = "HEAD",
+            IsEnabled = true
         };
 
-        var monitorLocation = await CreateMonitor(client, initialMonitor);
+        var monitorLocation = await TestData.CreateMonitor(client, initialMonitor);
 
         initialMonitor.Path = path;
         initialMonitor.IntervalSeconds = intervalSeconds;
@@ -106,9 +107,9 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
-            TestConstants.TestPassword);
+            TestData.TestPassword);
 
-        var monitorLocation = await CreateMonitor(client);
+        var monitorLocation = await TestData.CreateMonitor(client);
 
         using var deleteMonitor = await client.DeleteAsync(monitorLocation, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NoContent, deleteMonitor.StatusCode);
@@ -121,12 +122,12 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     public async Task GetMonitor_OwnedByAnotherUser_ReturnsNotFound()
     {
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestData.TestPassword);
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestData.TestPassword);
         
-        var monitorLocationA = await CreateMonitor(clientA);
-        var monitorLocationB = await CreateMonitor(clientB);
+        var monitorLocationA = await TestData.CreateMonitor(clientA);
+        var monitorLocationB = await TestData.CreateMonitor(clientB);
 
         using var getA = await clientA.GetAsync(monitorLocationA, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getA.StatusCode);
@@ -147,14 +148,14 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
-            TestConstants.TestPassword);
+            TestData.TestPassword);
         
-        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestData.NewService(),
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
         var serviceLocation = servicesResponse.Headers.Location;
         
-        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", TestConstants.TestMonitor,
+        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", TestData.NewMonitor(),
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
         
@@ -177,9 +178,9 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
-            TestConstants.TestPassword);
+            TestData.TestPassword);
 
-        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
+        using var servicesResponse = await client.PostAsJsonAsync("/services", TestData.NewService(),
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
         var serviceLocation = servicesResponse.Headers.Location;
@@ -195,40 +196,23 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     public async Task GetAllMonitors_ForCurrentUser_ReturnsOnlyCurrentUserMonitors()
     {
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestConstants.TestPassword);
+        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailA, TestData.TestPassword);
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestConstants.TestPassword);
+        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmailB, TestData.TestPassword);
         
         using var getResponseInitial = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
         getResponseInitial.EnsureSuccessStatusCode();
         using var initialJson = await getResponseInitial.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         Assert.Equal(0, initialJson?.RootElement.GetArrayLength());
         
-        await CreateMonitor(clientA);
-        await CreateMonitor(clientA);
-        await CreateMonitor(clientB);
+        await TestData.CreateMonitor(clientA);
+        await TestData.CreateMonitor(clientA);
+        await TestData.CreateMonitor(clientB);
 
         using var getResponseFinal = await clientA.GetAsync("/monitors", TestContext.Current.CancellationToken);
         getResponseFinal.EnsureSuccessStatusCode();
         using var json = await getResponseFinal.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         
         Assert.Equal(2, json?.RootElement.GetArrayLength());
-    }
-    
-    public static async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
-    {
-        monitor ??= TestConstants.TestMonitor;
-        
-        using var servicesResponse = await client.PostAsJsonAsync("/services", TestConstants.TestService,
-            TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
-        var serviceLocation = servicesResponse.Headers.Location;
-        
-        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", monitor,
-            TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
-        var monitorLocation = monitorResponse.Headers.Location;
-
-        return monitorLocation;
     }
 }

@@ -39,7 +39,8 @@ public class PulseDbContext : IdentityDbContext<ApplicationUser, IdentityRole<in
             entity.Property(e => e.MonitorId).HasColumnName("monitor_id");
             entity.Property(e => e.Outcome)
                 .HasMaxLength(30)
-                .HasColumnName("outcome");
+                .HasColumnName("outcome")
+                .HasConversion<string>();
 
             entity.HasOne(d => d.Monitor).WithMany(p => p.CheckResults)
                 .HasForeignKey(d => d.MonitorId)

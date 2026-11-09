@@ -2,7 +2,7 @@ using System.Security.Claims;
 
 namespace app.RouteHandlers;
 
-public static class RouteHelper
+public static class RouteHandlerHelper
 {
     public static int? GetUserId(ClaimsPrincipal user)
     {
