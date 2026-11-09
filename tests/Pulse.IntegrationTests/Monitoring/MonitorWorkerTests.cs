@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.InteropServices;
 using app.Models;
 using app.Monitoring;
 using Microsoft.EntityFrameworkCore;
@@ -14,9 +13,6 @@ namespace Pulse.IntegrationTests.Monitoring;
 
 public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : IClassFixture<PulseWebApplicationFactory<Program>>
 {
-    private HttpMessageHandler _successHandler = new SuccessHttpHandler();
-    private HttpMessageHandler _timeoutHandler = new TimeoutHttpHandler();
-    
     [Fact]
     public async Task MonitorProcessor_WithOverdueMonitor_SavesExactlyOneResult()
     {
@@ -39,7 +35,7 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
             .ToListAsync(TestContext.Current.CancellationToken);
 
         var checkResult = Assert.Single(checkResults);
-        Assert.Equal(HttpMonitorChecker.Success, checkResult.Outcome);
+        Assert.Equal(CheckOutcomeType.Success, checkResult.Outcome);
 
         var updatedMonitor = await verificationDb.Monitors.AsNoTracking()
             .SingleAsync(m => m.MonitorId == monitorId, TestContext.Current.CancellationToken);
@@ -214,10 +210,10 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
     private static DueMonitorProcessor CreateProcessor(IServiceProvider services, PulseDbContext dbContext, HttpClient httpClient)
     {
         var writer = services.GetRequiredService<CheckResultWriter>();
-        var logger = services.GetRequiredService<ILogger<DueMonitorProcessor>>();
+        var processorLogger = services.GetRequiredService<ILogger<DueMonitorProcessor>>();
         var checker = new HttpMonitorChecker(httpClient, NullLogger<HttpMonitorChecker>.Instance);
 
-        return new DueMonitorProcessor(dbContext, checker, writer, logger);
+        return new DueMonitorProcessor(dbContext, checker, writer, processorLogger);
     }
     
     private static async Task MakeMonitorDueAsync(PulseDbContext db, int monitorId, bool isEnabled, CancellationToken token)

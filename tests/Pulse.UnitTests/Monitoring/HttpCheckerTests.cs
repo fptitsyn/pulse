@@ -1,4 +1,5 @@
 using System.Net;
+using app.Models;
 using app.Monitoring;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -13,13 +14,13 @@ public class HttpCheckerTests
         using var client = new HttpClient(handler);
 
         string method = "GET";
-        string uri = "http://example.com/index";
+        string uri = "https://example.com/index";
         HttpCheckOutcome checkOutcome = await CreateCheckOutcome(client, method, uri);
         
         Assert.Equal(HttpMethod.Get, handler.ReceivedMethod);
         Assert.Equal(new Uri(uri), handler.ReceivedUri);
         Assert.Equal(HttpStatusCode.OK, checkOutcome.HttpStatusCode);
-        Assert.Equal(HttpMonitorChecker.Success, checkOutcome.Outcome);
+        Assert.Equal(CheckOutcomeType.Success, checkOutcome.Outcome);
     }
 
     [Fact]
@@ -30,7 +31,7 @@ public class HttpCheckerTests
 
         var checker = new HttpMonitorChecker(client, NullLogger<HttpMonitorChecker>.Instance);
 
-        Uri uri = new("http://example.com");
+        Uri uri = new("https://example.com");
         HttpMethod method = HttpMethod.Head;
 
         Task<HttpCheckOutcome> checkTask = checker.SendRequestAsync(uri, method, cts.Token);
@@ -47,17 +48,17 @@ public class HttpCheckerTests
         HttpCheckOutcome checkOutcome = await CreateCheckOutcome(client);
         
         Assert.Equal(HttpStatusCode.ServiceUnavailable, checkOutcome.HttpStatusCode);
-        Assert.Equal(HttpMonitorChecker.HttpError, checkOutcome.Outcome);
+        Assert.Equal(CheckOutcomeType.HttpError, checkOutcome.Outcome);
     }
 
     [Fact]
     public async Task SendRequest_WithMissingEndpoint_ReturnsNotFound()
     {
         using var client = new HttpClient(new NotFoundHandler());
-        var checkOutcome = await CreateCheckOutcome(client, uriS: "http://example.x");
+        var checkOutcome = await CreateCheckOutcome(client, uriS: "https://example.x");
         
         Assert.Equal(HttpStatusCode.NotFound, checkOutcome.HttpStatusCode);
-        Assert.Equal(HttpMonitorChecker.HttpError, checkOutcome.Outcome);
+        Assert.Equal(CheckOutcomeType.HttpError, checkOutcome.Outcome);
     }
 
     [Fact]
@@ -67,7 +68,7 @@ public class HttpCheckerTests
         var checkOutcome = await CreateCheckOutcome(client);
         
         Assert.Null(checkOutcome.HttpStatusCode);
-        Assert.Equal(HttpMonitorChecker.RequestTimeout, checkOutcome.Outcome);
+        Assert.Equal(CheckOutcomeType.Timeout, checkOutcome.Outcome);
     }
     
     [Fact]
@@ -77,10 +78,10 @@ public class HttpCheckerTests
         var checkOutcome = await CreateCheckOutcome(client);
         
         Assert.Null(checkOutcome.HttpStatusCode);
-        Assert.Equal(HttpMonitorChecker.NetworkError, checkOutcome.Outcome);
+        Assert.Equal(CheckOutcomeType.NetworkError, checkOutcome.Outcome);
     }
     
-    private async Task<HttpCheckOutcome> CreateCheckOutcome(HttpClient client, string method = "HEAD", string uriS = "http://example.com")
+    private async Task<HttpCheckOutcome> CreateCheckOutcome(HttpClient client, string method = "HEAD", string uriS = "https://example.com")
     {
         var checker = new HttpMonitorChecker(client, NullLogger<HttpMonitorChecker>.Instance);
         HttpCheckOutcome checkOutcome = await checker.SendRequestAsync(new Uri(uriS), HttpMethod.Parse(method),
