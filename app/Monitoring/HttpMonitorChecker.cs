@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using System.Security.Authentication;
 using app.Models;
 
 namespace app.Monitoring;
@@ -25,12 +27,6 @@ public class HttpMonitorChecker
             var outcome = response.IsSuccessStatusCode ? CheckOutcomeType.Success : CheckOutcomeType.HttpError;
             return BuildHttpCheckOutcome(stopwatch, response.StatusCode, outcome);
         }
-        catch (HttpRequestException e)
-        {
-            _logger.LogDebug(e, "HTTP monitor request failed. Error category: {ErrorCategory}", e.HttpRequestError);
-            
-            return BuildHttpCheckOutcome(stopwatch, null, CheckOutcomeType.NetworkError);
-        }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
             throw;
@@ -39,6 +35,11 @@ public class HttpMonitorChecker
         {
             _logger.LogDebug(e, "The request timed out.");
             return BuildHttpCheckOutcome(stopwatch, null, CheckOutcomeType.Timeout);
+        }
+        catch (Exception e) when (e is HttpRequestException or SocketException or IOException or AuthenticationException)
+        {
+            _logger.LogDebug(e, "HTTP monitor transport failure");
+            return BuildHttpCheckOutcome(stopwatch, null, CheckOutcomeType.NetworkError);
         }
     }
 

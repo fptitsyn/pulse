@@ -182,14 +182,20 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         int monitorId = await CreateMonitorAndGetIdAsync(factory);
         await MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
         var monitor = await dbContext.Monitors.FindAsync([monitorId], TestContext.Current.CancellationToken);
-        
-        var serviceStatusHandler = scope.ServiceProvider.GetRequiredService<ServiceStatusHandler>();
     
         await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
+        
         var service = await dbContext.Services.FindAsync([monitor.ServiceId], TestContext.Current.CancellationToken);
+        var serviceStatusHandler = scope.ServiceProvider.GetRequiredService<ServiceStatusHandler>();
         await serviceStatusHandler.ConsiderServiceStatus(service, TestContext.Current.CancellationToken);
+        
+        await using var verificationScope = factory.Services.CreateAsyncScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<PulseDbContext>();
 
-        Assert.Equal(expectedStatus, service.ServiceStatus);
+        var persistedService = await verificationDb.Services.AsNoTracking()
+            .SingleAsync(s => s.ServiceId == monitor.ServiceId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(expectedStatus, persistedService.ServiceStatus);
     }
     
     private static async Task<int> CreateMonitorAndGetIdAsync(PulseWebApplicationFactory<Program> factory)

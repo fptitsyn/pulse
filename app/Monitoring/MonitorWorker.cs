@@ -10,10 +10,9 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            
             try
             {
+                await using var scope = scopeFactory.CreateAsyncScope();
                 var processor = scope.ServiceProvider.GetRequiredService<DueMonitorProcessor>();
                 await processor.ProcessDueAsync(stoppingToken);
             }
@@ -28,10 +27,11 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
 
             try
             {
+                await using var scope = scopeFactory.CreateAsyncScope();
                 var serviceStatusHandler = scope.ServiceProvider.GetRequiredService<ServiceStatusHandler>();
                 var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
                 var services = await dbContext.Services.ToListAsync(stoppingToken);
-
+    
                 foreach (var service in services)
                 {
                     await serviceStatusHandler.ConsiderServiceStatus(service, stoppingToken);
