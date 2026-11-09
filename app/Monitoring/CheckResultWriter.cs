@@ -4,9 +4,9 @@ namespace app.Monitoring;
 
 public class CheckResultWriter(PulseDbContext dbContext)
 {
-    public CheckResult AddCheckResult(int monitorId, HttpCheckOutcome checkOutcome)
+    public void AddCheckResult(int monitorId, HttpCheckOutcome checkOutcome)
     {
-        var entityEntry = dbContext.CheckResults.Add(new CheckResult
+        dbContext.CheckResults.Add(new CheckResult
         {
             MonitorId = monitorId,
             CheckedAt = checkOutcome.CheckedAt,
@@ -14,7 +14,5 @@ public class CheckResultWriter(PulseDbContext dbContext)
             Outcome = checkOutcome.Outcome,
             DurationMs = checkOutcome.DurationMs
         });
-
-        return entityEntry.Entity;
     }
 }

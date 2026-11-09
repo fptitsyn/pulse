@@ -26,16 +26,21 @@ public class HttpMonitorChecker
         try
         {
             using var response = await _client.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead, token);
-            string outcome = response.IsSuccessStatusCode ? Success : HttpError;
+            string outcome;
+            if (response.IsSuccessStatusCode)
+            {
+                outcome = response.StatusCode == HttpStatusCode.ServiceUnavailable ? NetworkError : Success;
+            }
+            else
+            {
+                outcome = HttpError;
+            }
 
             return BuildHttpCheckOutcome(stopwatch, response.StatusCode, outcome);
         }
         catch (HttpRequestException e)
         {
-            _logger.LogDebug(
-                e,
-                "HTTP monitor request failed. Error category: {ErrorCategory}",
-                e.HttpRequestError);
+            _logger.LogDebug(e, "HTTP monitor request failed. Error category: {ErrorCategory}", e.HttpRequestError);
             
             return BuildHttpCheckOutcome(stopwatch, null, NetworkError);
         }
