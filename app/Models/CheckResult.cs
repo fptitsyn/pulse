@@ -12,9 +12,17 @@ public class CheckResult
 
     public HttpStatusCode? HttpStatusCode { get; set; }
 
-    public string Outcome { get; set; } = null!;
+    public CheckOutcomeType Outcome { get; set; }
 
     public int DurationMs { get; set; }
 
     public virtual Monitor Monitor { get; set; } = null!;
+}
+
+public enum CheckOutcomeType
+{
+    Success,
+    HttpError,
+    Timeout,
+    NetworkError
 }

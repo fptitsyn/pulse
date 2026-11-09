@@ -21,7 +21,7 @@ public class ServiceStatusHandler(PulseDbContext dbContext)
             latestCheckResults.Add(latestForEachMonitor);
         }
 
-        service.ServiceStatus = latestCheckResults.Any(ch => ch.Outcome is HttpMonitorChecker.Success or HttpMonitorChecker.HttpError) ?
+        service.ServiceStatus = latestCheckResults.Any(ch => ch.Outcome is CheckOutcomeType.Success or CheckOutcomeType.HttpError) ?
             ServiceStatus.Up : ServiceStatus.Down;
         
         await dbContext.SaveChangesAsync(token);

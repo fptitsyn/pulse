@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace app.Monitoring;
 
-public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWorker> logger, PulseDbContext dbContext) 
+public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWorker> logger) 
     : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,6 +29,7 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
             try
             {
                 var serviceStatusHandler = scope.ServiceProvider.GetRequiredService<ServiceStatusHandler>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
                 var services = await dbContext.Services.ToListAsync(stoppingToken);
 
                 foreach (var service in services)
@@ -36,9 +37,13 @@ public class MonitorWorker(IServiceScopeFactory scopeFactory, ILogger<MonitorWor
                     await serviceStatusHandler.ConsiderServiceStatus(service, stoppingToken);
                 }
             }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Monitoring iteration failed");
+                logger.LogError(ex, "Failed to update service status");
             }
             
             try
