@@ -56,6 +56,7 @@ app.UseHttpsRedirection();
 
 app.RegisterServiceRoutes();
 app.RegisterMonitorRoutes();
+app.RegisterCheckResultRoutes();
 app.MapIdentityApi<ApplicationUser>();
 
 app.UseAuthentication();
