@@ -135,7 +135,7 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         
         var invalidMonitorLocation = monitorResponse.Headers.Location;
         var invalidMonitorId = int.Parse(invalidMonitorLocation!.ToString().TrimEnd('/').Split('/')[^1]);
-        var validMonitorLocation = await TestData.CreateMonitor(client);
+        var validMonitorLocation = await TestData.CreateMonitorAsync(client);
         var validMonitorId = int.Parse(validMonitorLocation!.ToString().TrimEnd('/').Split('/')[^1]);
 
         await MakeMonitorDueAsync(dbContext, invalidMonitorId, true, TestContext.Current.CancellationToken);
@@ -203,7 +203,7 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         var testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestData.TestPassword);
         
-        var location = await TestData.CreateMonitor(client);
+        var location = await TestData.CreateMonitorAsync(client);
         var monitorId = int.Parse(location!.ToString().TrimEnd('/').Split('/')[^1]);
         return monitorId;
     }
