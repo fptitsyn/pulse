@@ -185,7 +185,7 @@ tests/
 
 ## Project Status
 
-Pulse is an **ongoing personal project** focused on backend development.
+Pulse is an **ongoing pet project** focused on backend development.
 
 The current implementation provides authenticated service management, scheduled HTTP monitoring, persisted check history, and service-health calculations.
 
@@ -193,6 +193,6 @@ The application is currently backend-focused; a user-facing dashboard, alert not
 
 ## Motivation
 
-I built Pulse to gain practical experience designing a backend system beyond basic CRUD operations.
+Pulse was built to get practical experience designing a backend system beyond basic CRUD operations.
 
 The project explores scheduled background work, dependency injection and service lifetimes, reliable database operations, HTTP failure handling, secure outbound requests, and automated testing with real infrastructure.
