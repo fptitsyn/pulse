@@ -8,15 +8,15 @@ The project is developed as a personal backend engineering project, with an emph
 
 ## Features
 
-- **Service management** — Create, view, update, and delete services through a REST API.
-- **Configurable HTTP monitors** — Assign multiple monitors to a service, each with its own endpoint path, HTTP method (GET or HEAD), and check interval.
-- **Background monitoring** — Automatically execute scheduled checks using an ASP.NET Core hosted service.
-- **Check history** — Store timestamps, HTTP status codes, response times, and check outcomes in PostgreSQL.
-- **Health status aggregation** — Calculate service status (`Up`, `Down`, or `Unknown`) from the latest results of its enabled monitors.
-- **Authentication and authorization** — Use ASP.NET Core Identity and bearer-token authentication to protect user data.
-- **SSRF protection** — Apply the Microsoft AntiSSRF library to outgoing requests to restrict access to unsafe network destinations.
-- **Interactive API documentation** — Explore and test endpoints using Swagger UI in development.
-- **Automated testing** — Unit and integration tests covering monitoring logic, HTTP failures, API endpoints, and database behavior.
+- **Service management** - Create, view, update, and delete services through a REST API.
+- **Configurable HTTP monitors** - Assign multiple monitors to a service, each with its own endpoint path, HTTP method (GET or HEAD), and check interval.
+- **Background monitoring** - Automatically execute scheduled checks using an ASP.NET Core hosted service.
+- **Check history** - Store timestamps, HTTP status codes, response times, and check outcomes in PostgreSQL.
+- **Health status aggregation** - Calculate service status (`Up`, `Down`, or `Unknown`) from the latest results of its enabled monitors.
+- **Authentication and authorization** - Use ASP.NET Core Identity and bearer-token authentication to protect user data.
+- **SSRF protection** - Apply the Microsoft AntiSSRF library to outgoing requests to restrict access to unsafe network destinations.
+- **Interactive API documentation** - Explore and test endpoints using Swagger UI in development.
+- **Automated testing** - Unit and integration tests covering monitoring logic, HTTP failures, API endpoints, and database behavior.
 
 ## Tech Stack
 
@@ -32,34 +32,6 @@ The project is developed as a personal backend engineering project, with an emph
 | Security | Microsoft.Security.AntiSSRF |
 | Testing | xUnit v3, Testcontainers, WebApplicationFactory |
 | API documentation | Swagger / OpenAPI |
-
-## Architecture
-
-Pulse separates API operations, HTTP checking, result persistence, and service-status calculation.
-
-```text
-                         REST API
-                            |
-                   Authentication
-                            |
-                     Service / Monitor
-                       Management
-                            |
-                        PostgreSQL
-                            ^
-                            |
-                     MonitorWorker
-                            |
-              +-------------+-------------+
-              |                           |
-       DueMonitorProcessor         ServiceStatusHandler
-              |
-       +------+------+
-       |             |
-HttpMonitorChecker  CheckResultWriter
-       |             |
- External APIs    PostgreSQL
-```
 
 ### Monitoring workflow
 
