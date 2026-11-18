@@ -144,31 +144,26 @@ public class MonitorEndpointsTests : IClassFixture<PulseWebApplicationFactory<Pr
     [InlineData(2)]
     [InlineData(5)]
     [InlineData(100)]
-    public async Task GetMonitors_ForNonExistingService_ReturnsNotFound(int serviceId)
+    public async Task GetMonitors_ForNonExistingService_ReturnsNotFound(int offset)
     {
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(_factory.CreateClient(), testEmail,
             TestData.TestPassword);
-        
+
         using var servicesResponse = await client.PostAsJsonAsync("/services", TestData.NewService(),
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Created, servicesResponse.StatusCode);
+
         var serviceLocation = servicesResponse.Headers.Location;
-        
-        using var monitorResponse = await client.PostAsJsonAsync($"{serviceLocation}/monitors", TestData.NewMonitor(),
-            TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.Created, monitorResponse.StatusCode);
-        
-        using var getAllMonitors =
-            await client.GetAsync($"{serviceLocation}/monitors", TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.OK, getAllMonitors.StatusCode);
+        Assert.NotNull(serviceLocation);
 
-        using var json = await getAllMonitors.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        Assert.Equal(1, json?.RootElement.GetArrayLength());
+        int createdServiceId = int.Parse(serviceLocation.ToString().TrimEnd('/').Split('/')[^1]);
+        int nonexistentServiceId = createdServiceId + offset;
 
-        using var getWrongServiceMonitors = await client.GetAsync($"/services/{serviceId}/monitors/",
+        using var response = await client.GetAsync($"/services/{nonexistentServiceId}/monitors/",
             TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.NotFound, getWrongServiceMonitors.StatusCode);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Theory]
