@@ -20,13 +20,19 @@ public static class CheckResultRouteHandler
                     .Where(ch => ch.Monitor.Service.ApplicationUserId == userId)
                     .Select(ch => new
                     {
+                        ch.CheckResultId,
+                        ch.MonitorId,
+                        ch.Monitor.ServiceId,
                         ch.Monitor.Path,
                         ch.CheckedAt,
                         ch.DurationMs,
                         ch.Outcome,
                         ch.HttpStatusCode
                     })
+                    .OrderByDescending(ch => ch.CheckedAt)
+                    .ThenByDescending(ch => ch.CheckResultId)
                     .ToListAsync(token);
+                
 
                 return Results.Ok(checkResults);
             }).RequireAuthorization();
@@ -37,15 +43,11 @@ public static class CheckResultRouteHandler
                 int? userId = RouteHandlerHelper.GetUserId(user);
                 if (userId == null) return Results.Unauthorized();
 
-                if (serviceId <= 0) return Results.BadRequest();
-                if (monitorId <= 0) return Results.BadRequest();
-            
-                bool serviceExists = await dbContext.Services.AnyAsync(s => s.ServiceId == serviceId &&
-                    s.ApplicationUserId == userId, token);
-                if (!serviceExists) return Results.NotFound();
-                
-                bool monitorExists = await dbContext.Monitors.AnyAsync(m => m.MonitorId == monitorId 
-                    && m.ServiceId == serviceId && m.Service.ApplicationUserId == userId, token);
+                if (serviceId <= 0 || monitorId <= 0) return Results.BadRequest();
+
+                bool monitorExists = await dbContext.Monitors.AnyAsync(m =>
+                    m.MonitorId == monitorId && m.ServiceId == serviceId && 
+                    m.Service.ApplicationUserId == userId, token);
                 if (!monitorExists) return Results.NotFound();
                 
                 var checkResults = await dbContext.CheckResults
@@ -54,12 +56,17 @@ public static class CheckResultRouteHandler
                                  ch.Monitor.Service.ApplicationUserId == userId)
                     .Select(ch => new
                     {
+                        ch.CheckResultId,
+                        ch.MonitorId,
+                        ch.Monitor.ServiceId,
                         ch.Monitor.Path,
                         ch.CheckedAt,
                         ch.DurationMs,
                         ch.Outcome,
                         ch.HttpStatusCode
                     })
+                    .OrderByDescending(ch => ch.CheckedAt)
+                    .ThenByDescending(ch => ch.CheckResultId)
                     .ToListAsync(token);
 
                 return Results.Ok(checkResults);
@@ -85,6 +92,9 @@ public static class CheckResultRouteHandler
 
                 var checkResultReturn = new
                 {
+                    checkResult.CheckResultId,
+                    checkResult.MonitorId,
+                    checkResult.Monitor.ServiceId,
                     checkResult.Monitor.Path,
                     checkResult.CheckedAt,
                     checkResult.DurationMs,
@@ -105,7 +115,6 @@ public static class CheckResultRouteHandler
                 if (serviceId <= 0 || monitorId <= 0 || checkResultId <= 0) return Results.BadRequest();
 
                 var checkResult = await dbContext.CheckResults
-                    .Include(ch => ch.Monitor)
                     .FirstOrDefaultAsync(ch =>
                         ch.Monitor.Service.ApplicationUserId == userId &&
                         ch.Monitor.ServiceId == serviceId &&
