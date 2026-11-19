@@ -11,7 +11,7 @@ public static class TestData
     public static ServiceDto NewService() => new() { Name = "testName", BaseUrl = "https://test.com" };
     public static MonitorDto NewMonitor() => new() { Path = "testPath", IntervalSeconds = 5, HttpMethod = "HEAD", IsEnabled = true };
 
-    public static async Task<Uri?> CreateMonitor(HttpClient client, MonitorDto? monitor = null)
+    public static async Task<Uri?> CreateMonitorAsync(HttpClient client, MonitorDto? monitor = null)
     {
         monitor ??= NewMonitor();
         
