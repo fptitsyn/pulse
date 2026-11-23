@@ -19,10 +19,10 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         await using var scope = factory.Services.CreateAsyncScope();
         using var httpClient = new HttpClient(new SuccessHttpHandler());
         var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-        var processor = CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
+        var processor = TestHelper.CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
 
-        var monitorId = await CreateMonitorAndGetIdAsync(factory);
-        await MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
+        var monitorId = await TestHelper.CreateMonitorAndGetIdAsync(factory);
+        await TestHelper.MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
         
         // Act
         await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
@@ -40,7 +40,7 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         var updatedMonitor = await verificationDb.Monitors.AsNoTracking()
             .SingleAsync(m => m.MonitorId == monitorId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(checkResult.CheckedAt.AddSeconds(TestData.NewMonitor().IntervalSeconds), updatedMonitor.NextCheckAt);
+        Assert.Equal(checkResult.CheckedAt.AddSeconds(TestHelper.NewMonitor().IntervalSeconds), updatedMonitor.NextCheckAt);
     }
 
     [Fact]
@@ -49,10 +49,10 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         await using var scope = factory.Services.CreateAsyncScope();
         using var httpClient = new HttpClient(new SuccessHttpHandler());
         var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-        var processor = CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
+        var processor = TestHelper.CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
         
-        var monitorId = await CreateMonitorAndGetIdAsync(factory);
-        await MakeMonitorDueAsync(dbContext, monitorId, false, TestContext.Current.CancellationToken);
+        var monitorId = await TestHelper.CreateMonitorAndGetIdAsync(factory);
+        await TestHelper.MakeMonitorDueAsync(dbContext, monitorId, false, TestContext.Current.CancellationToken);
         
         await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
         
@@ -77,9 +77,9 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         await using var scope = factory.Services.CreateAsyncScope();
         using var httpClient = new HttpClient(new SuccessHttpHandler());
         var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-        var processor = CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
+        var processor = TestHelper.CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
         
-        var monitorId = await CreateMonitorAndGetIdAsync(factory);
+        var monitorId = await TestHelper.CreateMonitorAndGetIdAsync(factory);
         var monitor = await dbContext.Monitors.FindAsync([monitorId], TestContext.Current.CancellationToken);
         Assert.NotNull(monitor);
 
@@ -105,10 +105,10 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         await using var scope = factory.Services.CreateAsyncScope();
         using var httpClient = new HttpClient(new SuccessHttpHandler());
         var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-        var processor = CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
+        var processor = TestHelper.CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
 
         string testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestData.TestPassword);
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
         
         var invalidService = new ServiceDto
         {
@@ -135,11 +135,11 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         
         var invalidMonitorLocation = monitorResponse.Headers.Location;
         var invalidMonitorId = int.Parse(invalidMonitorLocation!.ToString().TrimEnd('/').Split('/')[^1]);
-        var validMonitorLocation = await TestData.CreateMonitor(client);
+        var validMonitorLocation = await TestHelper.CreateMonitorAsync(client);
         var validMonitorId = int.Parse(validMonitorLocation!.ToString().TrimEnd('/').Split('/')[^1]);
 
-        await MakeMonitorDueAsync(dbContext, invalidMonitorId, true, TestContext.Current.CancellationToken);
-        await MakeMonitorDueAsync(dbContext, validMonitorId, true, TestContext.Current.CancellationToken);
+        await TestHelper.MakeMonitorDueAsync(dbContext, invalidMonitorId, true, TestContext.Current.CancellationToken);
+        await TestHelper.MakeMonitorDueAsync(dbContext, validMonitorId, true, TestContext.Current.CancellationToken);
         
         var invalidMonitor = await dbContext.Monitors.Include(m => m.Service)
             .SingleAsync(m => m.MonitorId == invalidMonitorId, TestContext.Current.CancellationToken);
@@ -161,7 +161,7 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         var validMonitor = await verificationDb.Monitors.AsNoTracking()
             .SingleAsync(m => m.MonitorId == validMonitorId, TestContext.Current.CancellationToken);
 
-        Assert.Equal(checkResult.CheckedAt.AddSeconds(TestData.NewMonitor().IntervalSeconds), validMonitor.NextCheckAt);
+        Assert.Equal(checkResult.CheckedAt.AddSeconds(TestHelper.NewMonitor().IntervalSeconds), validMonitor.NextCheckAt);
         Assert.True(validMonitor.IsEnabled);
     }
     
@@ -177,10 +177,10 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
         var handler = (HttpMessageHandler)Activator.CreateInstance(handlerType)!;
         using var httpClient = new HttpClient(handler);
         var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-        var processor = CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
+        var processor = TestHelper.CreateProcessor(scope.ServiceProvider, dbContext, httpClient);
     
-        int monitorId = await CreateMonitorAndGetIdAsync(factory);
-        await MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
+        int monitorId = await TestHelper.CreateMonitorAndGetIdAsync(factory);
+        await TestHelper.MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
         var monitor = await dbContext.Monitors.FindAsync([monitorId], TestContext.Current.CancellationToken);
     
         await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
@@ -196,91 +196,5 @@ public class MonitorWorkerTests(PulseWebApplicationFactory<Program> factory) : I
             .SingleAsync(s => s.ServiceId == monitor.ServiceId, TestContext.Current.CancellationToken);
 
         Assert.Equal(expectedStatus, persistedService.ServiceStatus);
-    }
-    
-    private static async Task<int> CreateMonitorAndGetIdAsync(PulseWebApplicationFactory<Program> factory)
-    {
-        var testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestData.TestPassword);
-        
-        var location = await TestData.CreateMonitor(client);
-        var monitorId = int.Parse(location!.ToString().TrimEnd('/').Split('/')[^1]);
-        return monitorId;
-    }
-    
-    private static DueMonitorProcessor CreateProcessor(IServiceProvider services, PulseDbContext dbContext, HttpClient httpClient)
-    {
-        var writer = services.GetRequiredService<CheckResultWriter>();
-        var processorLogger = services.GetRequiredService<ILogger<DueMonitorProcessor>>();
-        var checker = new HttpMonitorChecker(httpClient, NullLogger<HttpMonitorChecker>.Instance);
-
-        return new DueMonitorProcessor(dbContext, checker, writer, processorLogger);
-    }
-    
-    private static async Task MakeMonitorDueAsync(PulseDbContext db, int monitorId, bool isEnabled, CancellationToken token)
-    {
-        var monitor = await db.Monitors.FindAsync([monitorId], token);
-        Assert.NotNull(monitor);
-
-        monitor.IsEnabled = isEnabled;
-        monitor.NextCheckAt = DateTime.UtcNow.AddMinutes(-5);
-
-        await db.SaveChangesAsync(token);
-    }
-}
-
-public sealed class SuccessHttpHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.OK);
-
-        return Task.FromResult(response);
-    }
-}
-
-public sealed class TimeoutHttpHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        throw new OperationCanceledException();
-    }
-}
-
-public sealed class NetworkFailureHttpHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        throw new HttpRequestException();
-    }
-}
-
-public sealed class ServiceUnavailableHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-
-        return Task.FromResult(response);
-    }
-}
-
-public sealed class NotFoundHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        var response = new HttpResponseMessage(HttpStatusCode.NotFound);
-
-        return Task.FromResult(response);
     }
 }
