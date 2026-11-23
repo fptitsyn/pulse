@@ -7,36 +7,43 @@ using Pulse.IntegrationTests.Helpers;
 
 namespace Pulse.IntegrationTests.Endpoints;
 
-public class CheckResultEndpointTests(PulseWebApplicationFactory<Program> factory) : IClassFixture<PulseWebApplicationFactory<Program>>
+public class CheckResultEndpointTests(PulseWebApplicationFactory<Program> factory)
+    : IClassFixture<PulseWebApplicationFactory<Program>>
 {
     [Fact]
     public async Task EnsurePostRequest_DoesNotProceed()
     {
         string testEmail = $"test{Guid.NewGuid()}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
+        var client =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+                TestHelper.TestPassword);
 
         var monitorLocation = await TestHelper.CreateMonitorAsync(client);
         using var postResponse = await client.PostAsync($"{monitorLocation}/check-results", null,
             TestContext.Current.CancellationToken);
-        
+
         Assert.Equal(HttpStatusCode.MethodNotAllowed, postResponse.StatusCode);
     }
-    
+
     [Fact]
     public async Task GetCheckResults_ByOwner_Success()
     {
         var testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
-        
+        var client =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+                TestHelper.TestPassword);
+
         var location = await TestHelper.CreateMonitorAsync(client);
-        await CreateCheckResultAsync(factory, client, location);
-        await CreateCheckResultAsync(factory, client, location);
+        int monitorId = int.Parse(location.ToString().TrimEnd('/').Split('/')[^1]);
+        await CreateCheckResultAsync(factory, monitorId);
+        await CreateCheckResultAsync(factory, monitorId);
 
         using var getResponse = await client.GetAsync("/check-results", TestContext.Current.CancellationToken);
         getResponse.EnsureSuccessStatusCode();
-        using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        using var json =
+            await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         var checkResultsCount = json.RootElement.GetArrayLength();
-        
+
         Assert.Equal(2, checkResultsCount);
     }
 
@@ -44,27 +51,28 @@ public class CheckResultEndpointTests(PulseWebApplicationFactory<Program> factor
     public async Task DeleteCheckResult_ByOwner_Success()
     {
         var testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
-        
-        var location = await TestHelper.CreateMonitorAsync(client);
-        await CreateCheckResultAsync(factory, client, location);
-        await CreateCheckResultAsync(factory, client, location);
+        var client =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+                TestHelper.TestPassword);
 
-        using var getResponse = await client.GetAsync("/check-results", TestContext.Current.CancellationToken);
-        getResponse.EnsureSuccessStatusCode();
-        using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        List<int> ids = json.RootElement.EnumerateArray().Select(ch => ch.GetProperty("checkResultId").GetInt32())
-            .ToList();
+        var location = await TestHelper.CreateMonitorAsync(client);
+        int monitorId = int.Parse(location.ToString().TrimEnd('/').Split('/')[^1]);
+        List<int> ids =
+            [await CreateCheckResultAsync(factory, monitorId), await CreateCheckResultAsync(factory, monitorId)];
 
         using var deleteResponse =
             await client.DeleteAsync($"{location}/check-results/{ids[0]}", TestContext.Current.CancellationToken);
-            
-        using var getAfterDeleteResponse = await client.GetAsync("/check-results", TestContext.Current.CancellationToken);
-        getResponse.EnsureSuccessStatusCode();
-        using var afterJson = await getAfterDeleteResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+
+        using var getAfterDeleteResponse =
+            await client.GetAsync("/check-results", TestContext.Current.CancellationToken);
+        getAfterDeleteResponse.EnsureSuccessStatusCode();
+        using var afterJson =
+            await getAfterDeleteResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
         var checkResultsCount = afterJson.RootElement.GetArrayLength();
-        
+        int afterId = afterJson.RootElement[0].GetProperty("checkResultId").GetInt32();
+
         Assert.Equal(1, checkResultsCount);
+        Assert.Equal(ids[1], afterId);
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
     }
 
@@ -72,24 +80,34 @@ public class CheckResultEndpointTests(PulseWebApplicationFactory<Program> factor
     public async Task GetCheckResult_FromAnotherUser_ReturnsNotFound()
     {
         string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
-        var clientA = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmailA, TestHelper.TestPassword);
+        var clientA =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmailA,
+                TestHelper.TestPassword);
         string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
-        var clientB = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmailB, TestHelper.TestPassword);
-        
-        var monitorLocationA = await TestHelper.CreateMonitorAsync(clientA);
-        var monitorLocationB = await TestHelper.CreateMonitorAsync(clientB);
+        var clientB =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmailB,
+                TestHelper.TestPassword);
 
-        await CreateCheckResultAsync(factory, clientA, monitorLocationA);
-        await CreateCheckResultAsync(factory, clientB, monitorLocationB);
-        
-        using var getA = await clientA.GetAsync($"{monitorLocationA}/check-results", TestContext.Current.CancellationToken);
+        var monitorLocationA = await TestHelper.CreateMonitorAsync(clientA);
+        int monitorIdA = int.Parse(monitorLocationA.ToString().TrimEnd('/').Split('/')[^1]);
+        var monitorLocationB = await TestHelper.CreateMonitorAsync(clientB);
+        int monitorIdB = int.Parse(monitorLocationB.ToString().TrimEnd('/').Split('/')[^1]);
+
+        await CreateCheckResultAsync(factory, monitorIdA);
+        await CreateCheckResultAsync(factory, monitorIdB);
+
+        using var getA =
+            await clientA.GetAsync($"{monitorLocationA}/check-results", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getA.StatusCode);
-        using var getAWrong = await clientA.GetAsync($"{monitorLocationB}/check-results", TestContext.Current.CancellationToken);
+        using var getAWrong =
+            await clientA.GetAsync($"{monitorLocationB}/check-results", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, getAWrong.StatusCode);
-        
-        using var getB = await clientB.GetAsync($"{monitorLocationB}/check-results", TestContext.Current.CancellationToken);
+
+        using var getB =
+            await clientB.GetAsync($"{monitorLocationB}/check-results", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, getB.StatusCode);
-        using var getBWrong = await clientB.GetAsync($"{monitorLocationA}/check-results", TestContext.Current.CancellationToken);
+        using var getBWrong =
+            await clientB.GetAsync($"{monitorLocationA}/check-results", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, getBWrong.StatusCode);
     }
 
@@ -97,20 +115,22 @@ public class CheckResultEndpointTests(PulseWebApplicationFactory<Program> factor
     public async Task GetDeletedCheckResult_ReturnsNotFound()
     {
         var testEmail = $"test-{Guid.NewGuid():N}@example.com";
-        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
+        var client =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail,
+                TestHelper.TestPassword);
+
         var location = await TestHelper.CreateMonitorAsync(client);
-        await CreateCheckResultAsync(factory, client, location!);
-        
+        int monitorId = int.Parse(location.ToString().TrimEnd('/').Split('/')[^1]);
+        int checkResultId = await CreateCheckResultAsync(factory, monitorId);
+
         using var getResponse = await client.GetAsync("/check-results", TestContext.Current.CancellationToken);
         getResponse.EnsureSuccessStatusCode();
-        
-        using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
-        int id = json.RootElement[0].GetProperty("checkResultId").GetInt32();
 
-        using var deleteResponse =
-            await client.DeleteAsync($"{location}/check-results/{id}", TestContext.Current.CancellationToken);
-            
-        using var getAfterResponse = await client.GetAsync($"{location}/check-results/{id}", TestContext.Current.CancellationToken);
+        using var deleteResponse = await client.DeleteAsync($"{location}/check-results/{checkResultId}",
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        using var getAfterResponse = await client.GetAsync($"{location}/check-results/{checkResultId}",
+            TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, getAfterResponse.StatusCode);
     }
 
@@ -119,25 +139,85 @@ public class CheckResultEndpointTests(PulseWebApplicationFactory<Program> factor
     {
         var testEmail = $"test-{Guid.NewGuid():N}@example.com";
         var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
-       
+
         var location = await TestHelper.CreateMonitorAsync(client);
-        await CreateCheckResultAsync(factory, client, location!);
-        
+        int monitorId = int.Parse(location.ToString().TrimEnd('/').Split('/')[^1]);
+        await CreateCheckResultAsync(factory, monitorId);
+
         var unauthorizedClient = factory.CreateClient();
-        using var getResponse = await unauthorizedClient.GetAsync($"{location}/check-results", TestContext.Current.CancellationToken);
-        
+        using var getResponse =
+            await unauthorizedClient.GetAsync($"{location}/check-results", TestContext.Current.CancellationToken);
+
         Assert.Equal(HttpStatusCode.Unauthorized, getResponse.StatusCode);
     }
 
-    private static async Task CreateCheckResultAsync(PulseWebApplicationFactory<Program> factory, HttpClient client, Uri location)
+    [Fact]
+    public async Task DeleteCheckResult_FromAnotherUser_ReturnsNotFound()
+    {
+        string testEmailA = $"test-{Guid.NewGuid():N}@example.com";
+        var clientA =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmailA,
+                TestHelper.TestPassword);
+        string testEmailB = $"test-{Guid.NewGuid():N}@example.com";
+        var clientB =
+            await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmailB,
+                TestHelper.TestPassword);
+
+        var monitorLocationA = await TestHelper.CreateMonitorAsync(clientA);
+        int monitorIdA = int.Parse(monitorLocationA.ToString().TrimEnd('/').Split('/')[^1]);
+        var monitorLocationB = await TestHelper.CreateMonitorAsync(clientB);
+        int monitorIdB = int.Parse(monitorLocationB.ToString().TrimEnd('/').Split('/')[^1]);
+
+        int checkResIdA = await CreateCheckResultAsync(factory, monitorIdA);
+        int checkResIdB = await CreateCheckResultAsync(factory, monitorIdB);
+
+        using var tryDeleteA = await clientB.DeleteAsync($"{monitorLocationA}/check-results/{checkResIdA}",
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, tryDeleteA.StatusCode);
+
+        using var getA = await clientA.GetAsync($"{monitorLocationA}/check-results/{checkResIdA}",
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, getA.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetSingleCheckResult_ReturnsOK()
+    {
+        var testEmail = $"test-{Guid.NewGuid():N}@example.com";
+        var client = await TestAuthentication.RegisterAndLoginUserAsync(factory.CreateClient(), testEmail, TestHelper.TestPassword);
+
+        var location = await TestHelper.CreateMonitorAsync(client);
+        int monitorId = int.Parse(location.ToString().TrimEnd('/').Split('/')[^1]);
+        int checkResultId = await CreateCheckResultAsync(factory, monitorId);
+
+        using var getResponse = await client.GetAsync($"{location}/check-results/{checkResultId}",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        using var json = await getResponse.Content.ReadFromJsonAsync<JsonDocument>(TestContext.Current.CancellationToken);
+        int duration = json.RootElement.GetProperty("durationMs").GetInt32();
+        
+        Assert.Equal(1, duration);
+    }
+
+    private static async Task<int> CreateCheckResultAsync(PulseWebApplicationFactory<Program> factory, int monitorId)
     {
         await using var scope = factory.Services.CreateAsyncScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
-        var processor = TestHelper.CreateProcessor(scope.ServiceProvider, dbContext, client);
-        
-        var monitorId = int.Parse(location.ToString().TrimEnd('/').Split('/')[^1]);
+        var db = scope.ServiceProvider.GetRequiredService<PulseDbContext>();
 
-        await TestHelper.MakeMonitorDueAsync(dbContext, monitorId, true, TestContext.Current.CancellationToken);
-        await processor.ProcessDueAsync(TestContext.Current.CancellationToken);
+        var result = new CheckResult
+        {
+            MonitorId = monitorId,
+            CheckedAt = DateTime.UtcNow,
+            DurationMs = 1,
+            Outcome = CheckOutcomeType.Success,
+            HttpStatusCode = HttpStatusCode.OK
+        };
+
+        db.CheckResults.Add(result);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return result.CheckResultId;
     }
 }
